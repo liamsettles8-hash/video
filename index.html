@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LightingMod Remote Desktop</title>
-
   <style>
     * {
       box-sizing: border-box;
@@ -82,6 +81,7 @@
 
     #screen {
       width: 100%;
+      height: auto;
       max-height: 75vh;
       background: #000;
       border-radius: 8px;
@@ -89,16 +89,6 @@
       display: block;
       cursor: crosshair;
       touch-action: none;
-    }
-
-    #screen:fullscreen {
-      width: 100vw;
-      height: 100vh;
-      max-height: none;
-      object-fit: contain;
-      border-radius: 0;
-      background: #000;
-      cursor: default;
     }
 
     #status {
@@ -134,10 +124,6 @@
       gap: 10px;
       margin-bottom: 12px;
     }
-
-    #screen:fullscreen {
-      outline: none;
-    }
   </style>
 </head>
 
@@ -163,7 +149,6 @@
       <h2>Remote Desktop</h2>
 
       <div class="controls">
-        <button id="fullscreenButton">Fullscreen</button>
         <button id="disconnectButton" class="danger">Disconnect</button>
       </div>
 
@@ -172,8 +157,8 @@
       <video id="screen" autoplay playsinline></video>
 
       <p class="muted">
-        Click the desktop to enter fullscreen. Press Escape to exit.
-        Mouse and keyboard input are forwarded while connected.
+        Click and move your mouse over the remote desktop to control it.
+        Keyboard input is forwarded while the connection is active.
       </p>
     </div>
 
@@ -211,7 +196,6 @@
     const logsElement = document.getElementById('logs');
 
     const disconnectButton = document.getElementById('disconnectButton');
-    const fullscreenButton = document.getElementById('fullscreenButton');
 
     let devices = {};
     let approvals = {};
@@ -632,45 +616,6 @@
 
       stopping = false;
     }
-
-    async function enterFullscreen() {
-      try {
-        if (!document.fullscreenElement) {
-          await screen.requestFullscreen();
-          log('Remote desktop entered fullscreen.');
-        } else {
-          await document.exitFullscreen();
-        }
-      } catch (error) {
-        log('Fullscreen failed: ' + error.message);
-      }
-    }
-
-    fullscreenButton.addEventListener('click', enterFullscreen);
-
-    screen.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        enterFullscreen();
-      }
-    });
-
-    document.addEventListener('fullscreenchange', () => {
-      fullscreenButton.textContent =
-        document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen';
-    });
-
-    disconnectButton.addEventListener('click', async () => {
-      log('Disconnect requested.');
-
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      }
-
-      await stopViewer();
-
-      setStatus('Disconnected.');
-      renderDevices();
-    });
 
     function sendInput(data) {
       if (
