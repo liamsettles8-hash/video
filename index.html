@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LightingMod Remote Desktop</title>
+
   <style>
     * {
       box-sizing: border-box;
@@ -90,6 +91,16 @@
       touch-action: none;
     }
 
+    #screen:fullscreen {
+      width: 100vw;
+      height: 100vh;
+      max-height: none;
+      object-fit: contain;
+      border-radius: 0;
+      background: #000;
+      cursor: default;
+    }
+
     #status {
       color: #aaa;
       margin: 10px 0;
@@ -123,6 +134,10 @@
       gap: 10px;
       margin-bottom: 12px;
     }
+
+    #screen:fullscreen {
+      outline: none;
+    }
   </style>
 </head>
 
@@ -148,6 +163,7 @@
       <h2>Remote Desktop</h2>
 
       <div class="controls">
+        <button id="fullscreenButton">Fullscreen</button>
         <button id="disconnectButton" class="danger">Disconnect</button>
       </div>
 
@@ -156,7 +172,8 @@
       <video id="screen" autoplay playsinline></video>
 
       <p class="muted">
-        Remote mouse and keyboard input are sent only while the approved session is active.
+        Click the desktop to enter fullscreen. Press Escape to exit.
+        Mouse and keyboard input are forwarded while connected.
       </p>
     </div>
 
@@ -176,8 +193,7 @@
       ref,
       onValue,
       set,
-      remove,
-      update
+      remove
     } from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js';
 
     import {
@@ -195,6 +211,7 @@
     const logsElement = document.getElementById('logs');
 
     const disconnectButton = document.getElementById('disconnectButton');
+    const fullscreenButton = document.getElementById('fullscreenButton');
 
     let devices = {};
     let approvals = {};
@@ -335,7 +352,6 @@
 
       return new Promise(resolve => {
         let finished = false;
-
         let timeout;
 
         function cleanup() {
@@ -379,9 +395,7 @@
     }
 
     async function startViewer(id) {
-      if (connecting) {
-        return;
-      }
+      if (connecting) return;
 
       await stopViewer();
 
@@ -609,10 +623,7 @@
 
       if (oldId && oldSessionId) {
         try {
-          const currentReference = ref(db, 'sessions/' + oldId);
-
-          await remove(currentReference);
-
+          await remove(ref(db, 'sessions/' + oldId));
           log('Firebase session removed.');
         } catch (error) {
           log('Could not remove Firebase session: ' + error.message);
@@ -622,9 +633,41 @@
       stopping = false;
     }
 
+    async function enterFullscreen() {
+      try {
+        if (!document.fullscreenElement) {
+          await screen.requestFullscreen();
+          log('Remote desktop entered fullscreen.');
+        } else {
+          await document.exitFullscreen();
+        }
+      } catch (error) {
+        log('Fullscreen failed: ' + error.message);
+      }
+    }
+
+    fullscreenButton.addEventListener('click', enterFullscreen);
+
+    screen.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        enterFullscreen();
+      }
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      fullscreenButton.textContent =
+        document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen';
+    });
+
     disconnectButton.addEventListener('click', async () => {
       log('Disconnect requested.');
+
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      }
+
       await stopViewer();
+
       setStatus('Disconnected.');
       renderDevices();
     });
@@ -641,21 +684,37 @@
     function getScreenCoordinates(event) {
       const bounds = screen.getBoundingClientRect();
 
-      const x = Math.max(
-        0,
-        Math.min(1, (event.clientX - bounds.left) / bounds.width)
+      const videoWidth = screen.videoWidth;
+      const videoHeight = screen.videoHeight;
+
+      if (!videoWidth || !videoHeight) {
+        return null;
+      }
+
+      const scale = Math.min(
+        bounds.width / videoWidth,
+        bounds.height / videoHeight
       );
 
-      const y = Math.max(
-        0,
-        Math.min(1, (event.clientY - bounds.top) / bounds.height)
-      );
+      const renderedWidth = videoWidth * scale;
+      const renderedHeight = videoHeight * scale;
 
-      return { x, y };
+      const offsetX = (bounds.width - renderedWidth) / 2;
+      const offsetY = (bounds.height - renderedHeight) / 2;
+
+      const x = (event.clientX - bounds.left - offsetX) / renderedWidth;
+      const y = (event.clientY - bounds.top - offsetY) / renderedHeight;
+
+      return {
+        x: Math.max(0, Math.min(1, x)),
+        y: Math.max(0, Math.min(1, y))
+      };
     }
 
     screen.addEventListener('mousemove', event => {
       const position = getScreenCoordinates(event);
+
+      if (!position) return;
 
       sendInput({
         type: 'mouseMove',
@@ -669,6 +728,8 @@
 
       const position = getScreenCoordinates(event);
 
+      if (!position) return;
+
       sendInput({
         type: 'mouseDown',
         button: event.button,
@@ -681,6 +742,8 @@
       event.preventDefault();
 
       const position = getScreenCoordinates(event);
+
+      if (!position) return;
 
       sendInput({
         type: 'mouseUp',
