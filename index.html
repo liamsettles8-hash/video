@@ -510,7 +510,7 @@
 
       log('Publishing offer to Firebase.');
 
-      sessionReference = ref(db, 'sessions/' + id);
+      sessionReference = ref(db, 'sessions/' + activeId);
 
       await set(sessionReference, {
         sessionId: sessionId,
