@@ -2,880 +2,977 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LightingMod Remote Desktop</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LightingMod Remote Desktop</title>
+<style>
+* {
+    box-sizing: border-box;
+}
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+body {
+    margin: 0;
+    padding: 24px;
+    background: #0b0d12;
+    color: #e8eaf0;
+    font-family: Arial, sans-serif;
+}
 
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 25px;
+}
+
+h2 {
+    margin-top: 0;
+    font-size: 17px;
+}
+
+.subtitle {
+    color: #858b9a;
+    font-size: 13px;
+    margin-top: 6px;
+}
+
+.status {
+    color: #a0a8b8;
+    font-size: 13px;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: minmax(250px, 320px) 1fr;
+    gap: 18px;
+}
+
+.panel {
+    background: #131720;
+    border: 1px solid #252b38;
+    border-radius: 12px;
+    padding: 18px;
+    min-width: 0;
+}
+
+.panel + .panel {
+    margin-top: 18px;
+}
+
+.device {
+    background: #1a202b;
+    border: 1px solid #2b3342;
+    border-radius: 9px;
+    padding: 13px;
+    margin-top: 10px;
+}
+
+.device-name {
+    font-weight: bold;
+    overflow-wrap: anywhere;
+}
+
+.device-info {
+    color: #8992a3;
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+button {
+    background: #5269e8;
+    color: white;
+    border: 0;
+    border-radius: 7px;
+    padding: 9px 13px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+button:hover {
+    background: #6479f0;
+}
+
+button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+button.secondary {
+    background: #303746;
+}
+
+button.danger {
+    background: #b83e4c;
+}
+
+button.danger:hover {
+    background: #d34b5b;
+}
+
+.viewer {
+    display: none;
+}
+
+.viewer.active {
+    display: block;
+}
+
+.viewer-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.viewer-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.viewer-actions button {
+    margin: 0;
+}
+
+.screen-wrap {
+    background: #050608;
+    border: 1px solid #303746;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    min-height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#screen {
+    display: block;
+    width: 100%;
+    max-height: 78vh;
+    object-fit: contain;
+    background: #050608;
+    cursor: crosshair;
+    outline: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#screen::-webkit-media-controls,
+#screen::-webkit-media-controls-enclosure,
+#screen::-webkit-media-controls-panel {
+    display: none !important;
+}
+
+.screen-hint {
+    color: #81899a;
+    text-align: center;
+    padding: 25px;
+    position: absolute;
+    pointer-events: none;
+    font-size: 13px;
+}
+
+.logs {
+    background: #090c11;
+    border: 1px solid #252b38;
+    border-radius: 8px;
+    padding: 12px;
+    height: 180px;
+    overflow-y: auto;
+    color: #aab2c2;
+    font-family: Consolas, monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.empty {
+    color: #777f90;
+    font-size: 13px;
+    padding: 10px 0;
+}
+
+.connection {
+    color: #9ca6b8;
+    font-size: 13px;
+}
+
+@media (max-width: 800px) {
     body {
-      margin: 0;
-      padding: 24px;
-      background: #101116;
-      color: #f2f2f5;
-      font-family: Arial, sans-serif;
+        padding: 12px;
     }
 
-    h1, h2 {
-      margin-top: 0;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: auto;
-    }
-
-    .panel {
-      background: #191b23;
-      border: 1px solid #30333f;
-      border-radius: 12px;
-      padding: 18px;
-      margin-bottom: 18px;
-    }
-
-    .device {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      padding: 14px;
-      border-bottom: 1px solid #30333f;
-    }
-
-    .device:last-child {
-      border-bottom: none;
-    }
-
-    button {
-      background: #7357ff;
-      border: none;
-      color: white;
-      padding: 10px 16px;
-      border-radius: 7px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    button:hover {
-      background: #876fff;
-    }
-
-    button:disabled {
-      opacity: .5;
-      cursor: not-allowed;
-    }
-
-    button.danger {
-      background: #d94343;
-    }
-
-    button.danger:hover {
-      background: #ed5555;
-    }
-
-    #viewer {
-      display: none;
+    .layout {
+        grid-template-columns: 1fr;
     }
 
     #screen {
-      width: 100%;
-      height: auto;
-      max-height: 75vh;
-      background: #000;
-      border-radius: 8px;
-      object-fit: contain;
-      display: block;
-      cursor: crosshair;
-      touch-action: none;
-      outline: none;
-      user-select: none;
+        max-height: 60vh;
     }
-
-    #screen::-webkit-media-controls,
-    #screen::-webkit-media-controls-enclosure,
-    #screen::-webkit-media-controls-panel {
-      display: none !important;
-    }
-
-    #screen:fullscreen {
-      width: 100vw;
-      height: 100vh;
-      max-height: none;
-      object-fit: contain;
-      background: #000;
-      border-radius: 0;
-      cursor: crosshair;
-    }
-
-    #status {
-      color: #aaa;
-      margin: 10px 0;
-      overflow-wrap: anywhere;
-    }
-
-    #logs {
-      height: 220px;
-      overflow-y: auto;
-      background: #0b0c10;
-      border-radius: 8px;
-      padding: 12px;
-      font-family: Consolas, monospace;
-      font-size: 12px;
-      overflow-wrap: anywhere;
-    }
-
-    .log {
-      margin-bottom: 6px;
-      color: #c9c9d2;
-    }
-
-    .muted {
-      color: #999;
-      font-size: 13px;
-    }
-
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-  </style>
+}
+</style>
 </head>
-
 <body>
-  <div class="container">
-    <h1>LightingMod Remote Desktop</h1>
 
-    <div class="panel">
-      <h2>Devices</h2>
-      <div id="devices">
-        <p class="muted">Loading devices...</p>
-      </div>
+<header>
+    <div>
+        <h1>LightingMod Remote Desktop</h1>
+        <div class="subtitle">Connect to approved LightingMod devices</div>
     </div>
+    <div class="status" id="connection">Connecting to Firebase...</div>
+</header>
 
-    <div class="panel">
-      <h2>Approvals</h2>
-      <div id="approvals">
-        <p class="muted">Loading approvals...</p>
-      </div>
-    </div>
+<div class="layout">
+    <aside>
+        <section class="panel">
+            <h2>Devices</h2>
+            <div id="devices">
+                <div class="empty">Loading devices...</div>
+            </div>
+        </section>
 
-    <div class="panel" id="viewer">
-      <h2>Remote Desktop</h2>
+        <section class="panel">
+            <h2>Approvals</h2>
+            <div id="approvals">
+                <div class="empty">Loading approvals...</div>
+            </div>
+        </section>
 
-      <div class="controls">
-        <button id="fullscreenButton">Fullscreen</button>
-        <button id="disconnectButton" class="danger">Disconnect</button>
-      </div>
+        <section class="panel">
+            <h2>Connection Logs</h2>
+            <div class="logs" id="debug"></div>
+        </section>
+    </aside>
 
-      <div id="status">Not connected</div>
+    <main>
+        <section class="panel viewer" id="viewer">
+            <div class="viewer-top">
+                <div>
+                    <h2 id="viewerTitle">Remote Desktop</h2>
+                    <div class="connection" id="viewerStatus">Connecting...</div>
+                </div>
 
-      <video
-        id="screen"
-        autoplay
-        playsinline
-        tabindex="0"
-        disablepictureinpicture
-        disableremoteplayback
-        controlslist="nodownload noremoteplayback"
-      ></video>
+                <div class="viewer-actions">
+                    <button class="secondary" id="fullscreen">Fullscreen</button>
+                    <button class="danger" id="disconnect">Disconnect</button>
+                </div>
+            </div>
 
-      <p class="muted">
-        Use the fullscreen button to expand the desktop.
-        Press Escape to exit. Mouse and keyboard input are forwarded while connected.
-      </p>
-    </div>
+            <div class="screen-wrap">
+                <video
+                    id="screen"
+                    autoplay
+                    playsinline
+                    disablepictureinpicture
+                    disableremoteplayback
+                    controlslist="nodownload nofullscreen noremoteplayback"
+                    tabindex="0"
+                ></video>
+                <div class="screen-hint" id="screenHint">
+                    Waiting for the remote desktop...
+                </div>
+            </div>
 
-    <div class="panel">
-      <h2>Connection Logs</h2>
-      <div id="logs"></div>
-    </div>
-  </div>
+            <div class="subtitle" style="margin-top: 10px">
+                Click the desktop to capture your mouse. Press Esc to release it.
+                Keyboard and mouse input are sent to the approved device.
+            </div>
+        </section>
 
-  <script type="module">
-    import {
-      initializeApp
-    } from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js';
+        <section class="panel" id="welcome">
+            <h2>Remote Desktop</h2>
+            <div class="empty">
+                Select an approved device to start a remote desktop session.
+            </div>
+        </section>
+    </main>
+</div>
 
-    import {
-      getDatabase,
-      ref,
-      onValue,
-      set,
-      remove
-    } from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js';
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import {
+    getDatabase,
+    ref,
+    onValue,
+    set,
+    update,
+    remove
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
-    import {
-      firebaseConfig
-    } from './firebase-config.js';
+import { firebaseConfig } from "./firebase-config.js";
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-    const devicesElement = document.getElementById('devices');
-    const approvalsElement = document.getElementById('approvals');
-    const viewerElement = document.getElementById('viewer');
-    const statusElement = document.getElementById('status');
-    const screen = document.getElementById('screen');
-    const logsElement = document.getElementById('logs');
+const connectionLabel = document.getElementById("connection");
+const devicesContainer = document.getElementById("devices");
+const approvalsContainer = document.getElementById("approvals");
+const viewer = document.getElementById("viewer");
+const welcome = document.getElementById("welcome");
+const viewerTitle = document.getElementById("viewerTitle");
+const viewerStatus = document.getElementById("viewerStatus");
+const screen = document.getElementById("screen");
+const screenHint = document.getElementById("screenHint");
+const debug = document.getElementById("debug");
+const disconnectButton = document.getElementById("disconnect");
+const fullscreenButton = document.getElementById("fullscreen");
 
-    const disconnectButton = document.getElementById('disconnectButton');
-    const fullscreenButton = document.getElementById('fullscreenButton');
+let peer = null;
+let inputChannel = null;
+let activeId = null;
+let activeSessionId = null;
+let sessionReference = null;
+let answerListener = null;
+let statusListener = null;
+let errorListener = null;
+let pointerLocked = false;
+let virtualX = 0.5;
+let virtualY = 0.5;
+let activeButtons = new Set();
+let activeKeys = new Set();
+let stopping = false;
 
-    let devices = {};
-    let approvals = {};
+function log(message) {
+    const time = new Date().toLocaleTimeString();
+    debug.textContent += `[${time}] ${message}\n`;
+    debug.scrollTop = debug.scrollHeight;
+}
 
-    let peer = null;
-    let inputChannel = null;
+function setStatus(message) {
+    viewerStatus.textContent = message;
+}
 
-    let activeId = null;
-    let sessionId = null;
-
-    let sessionListener = null;
-    let sessionReference = null;
-
-    let connecting = false;
-    let stopping = false;
-
-    function log(message) {
-      const entry = document.createElement('div');
-      entry.className = 'log';
-
-      entry.textContent =
-        '[' + new Date().toLocaleTimeString() + '] ' + message;
-
-      logsElement.appendChild(entry);
-      logsElement.scrollTop = logsElement.scrollHeight;
-
-      console.log(message);
+function sendInput(data) {
+    if (!inputChannel || inputChannel.readyState !== "open") {
+        return false;
     }
 
-    function setStatus(message) {
-      statusElement.textContent = message;
-      log('Status: ' + message);
-    }
-
-    function renderDevices() {
-      devicesElement.replaceChildren();
-
-      const entries = Object.entries(devices);
-
-      if (entries.length === 0) {
-        devicesElement.textContent = 'No devices found.';
-        return;
-      }
-
-      for (const [id, device] of entries) {
-        const row = document.createElement('div');
-        row.className = 'device';
-
-        const information = document.createElement('div');
-
-        const name = document.createElement('strong');
-        name.textContent = device.name || 'Unknown device';
-
-        const identifier = document.createElement('div');
-        identifier.className = 'muted';
-        identifier.textContent = id;
-
-        const deviceStatus = document.createElement('div');
-        deviceStatus.className = 'muted';
-        deviceStatus.textContent = device.status || 'Available';
-
-        information.append(name, identifier, deviceStatus);
-
-        const button = document.createElement('button');
-        button.textContent = 'Connect';
-        button.disabled = !approvals[id] || connecting;
-
-        button.addEventListener('click', () => {
-          startViewer(id);
-        });
-
-        row.append(information, button);
-        devicesElement.appendChild(row);
-      }
-    }
-
-    function renderApprovals() {
-      approvalsElement.replaceChildren();
-
-      const entries = Object.entries(approvals);
-      let found = false;
-
-      if (entries.length === 0) {
-        approvalsElement.textContent = 'No approved devices.';
-        return;
-      }
-
-      for (const [id, approval] of entries) {
-        if (!approval || approval.approved !== true) {
-          continue;
-        }
-
-        found = true;
-
-        const row = document.createElement('div');
-        row.className = 'device';
-
-        const information = document.createElement('div');
-
-        const name = document.createElement('strong');
-        name.textContent = devices[id]?.name || 'Approved device';
-
-        const identifier = document.createElement('div');
-        identifier.className = 'muted';
-        identifier.textContent = id;
-
-        information.append(name, identifier);
-        row.appendChild(information);
-
-        approvalsElement.appendChild(row);
-      }
-
-      if (!found) {
-        approvalsElement.textContent = 'No approved devices.';
-      }
-    }
-
-    onValue(ref(db, 'devices'), snapshot => {
-      devices = snapshot.val() || {};
-
-      log('Firebase devices listener updated.');
-
-      renderDevices();
-      renderApprovals();
-    }, error => {
-      log('Device listener error: ' + error.message);
-    });
-
-    onValue(ref(db, 'approvals'), snapshot => {
-      approvals = snapshot.val() || {};
-
-      log('Firebase approvals listener updated.');
-
-      renderDevices();
-      renderApprovals();
-    }, error => {
-      log('Approval listener error: ' + error.message);
-    });
-
-    async function waitForIceGathering(connection) {
-      if (connection.iceGatheringState === 'complete') {
-        log('ICE gathering already completed.');
-        return;
-      }
-
-      return new Promise(resolve => {
-        let finished = false;
-        let timeout;
-
-        function cleanup() {
-          clearTimeout(timeout);
-          connection.removeEventListener('icegatheringstatechange', changed);
-        }
-
-        function finish() {
-          if (finished) return;
-
-          finished = true;
-          cleanup();
-          resolve();
-        }
-
-        function changed() {
-          log('ICE gathering state: ' + connection.iceGatheringState);
-
-          if (connection.iceGatheringState === 'complete') {
-            log('ICE gathering completed.');
-            finish();
-          }
-        }
-
-        timeout = setTimeout(() => {
-          log('ICE gathering timed out. Continuing with available candidates.');
-          finish();
-        }, 20000);
-
-        connection.addEventListener('icegatheringstatechange', changed);
-        changed();
-      });
-    }
-
-    async function startViewer(id) {
-      if (connecting) return;
-
-      await stopViewer();
-
-      connecting = true;
-      renderDevices();
-
-      activeId = id;
-      viewerElement.style.display = 'block';
-
-      log('Starting viewer for device ' + id);
-
-      try {
-        await connectViewer();
-      } catch (error) {
-        log('Connection setup failed: ' + error.message);
-        setStatus(error.message);
-        await stopViewer();
-      } finally {
-        connecting = false;
-        renderDevices();
-      }
-    }
-
-    async function connectViewer() {
-      sessionId = crypto.randomUUID();
-
-      log('Session ID: ' + sessionId);
-      setStatus('Creating secure WebRTC connection…');
-
-      peer = new RTCPeerConnection({
-        iceServers: [
-          {
-            urls: 'stun:stun.l.google.com:19302'
-          }
-        ]
-      });
-
-      peer.addTransceiver('video', {
-        direction: 'recvonly'
-      });
-
-      inputChannel = peer.createDataChannel('remote-input', {
-        ordered: true
-      });
-
-      inputChannel.onopen = () => {
-        log('Remote input channel opened.');
-        setStatus('LIVE - Remote desktop connected.');
-      };
-
-      inputChannel.onclose = () => {
-        log('Remote input data channel closed.');
-
-        if (!stopping) {
-          setStatus('Remote input channel closed.');
-        }
-      };
-
-      inputChannel.onerror = error => {
-        log('Data channel error: ' + error);
-      };
-
-      peer.ontrack = event => {
-        log('Remote video track received.');
-
-        screen.srcObject = event.streams[0];
-
-        screen.play().catch(error => {
-          log('Video playback error: ' + error.message);
-        });
-      };
-
-      peer.onicecandidate = event => {
-        if (event.candidate) {
-          log('Local ICE candidate gathered.');
-        } else {
-          log('Local ICE candidate gathering finished.');
-        }
-      };
-
-      peer.onicegatheringstatechange = () => {
-        log('ICE gathering state: ' + peer.iceGatheringState);
-      };
-
-      peer.oniceconnectionstatechange = () => {
-        log('ICE connection state: ' + peer.iceConnectionState);
-      };
-
-      peer.onconnectionstatechange = () => {
-        log('Connection state: ' + peer.connectionState);
-
-        if (peer.connectionState === 'connected') {
-          setStatus('WebRTC connected. Waiting for video...');
-        }
-
-        if (
-          peer.connectionState === 'failed' ||
-          peer.connectionState === 'disconnected' ||
-          peer.connectionState === 'closed'
-        ) {
-          if (!stopping) {
-            setStatus('Connection ' + peer.connectionState + '.');
-          }
-        }
-      };
-
-      const offer = await peer.createOffer();
-      await peer.setLocalDescription(offer);
-
-      log('Local offer created. Gathering ICE candidates.');
-
-      await waitForIceGathering(peer);
-
-      if (!peer || !activeId || !sessionId) {
-        throw new Error('Connection was cancelled.');
-      }
-
-      const offerData = {
-        type: peer.localDescription.type,
-        sdp: peer.localDescription.sdp
-      };
-
-      log('Publishing offer to Firebase.');
-
-      sessionReference = ref(db, 'sessions/' + activeId);
-
-      await set(sessionReference, {
-        sessionId: sessionId,
-        offer: offerData,
-        status: 'offering',
-        createdAt: Date.now()
-      });
-
-      log('Offer published to Firebase.');
-
-      sessionListener = onValue(sessionReference, async snapshot => {
-        const data = snapshot.val();
-
-        if (!data) {
-          log('Session removed from Firebase.');
-          return;
-        }
-
-        if (data.sessionId !== sessionId) return;
-
-        if (data.error) {
-          log('Device error: ' + data.error);
-          setStatus('Device error: ' + data.error);
-          return;
-        }
-
-        if (
-          data.answer &&
-          peer &&
-          peer.signalingState === 'have-local-offer'
-        ) {
-          try {
-            log('Remote answer received.');
-
-            await peer.setRemoteDescription(
-              new RTCSessionDescription(data.answer)
-            );
-
-            log('Remote answer applied.');
-            setStatus('Answer received. Establishing connection...');
-          } catch (error) {
-            log('Failed to apply answer: ' + error.message);
-            setStatus('Failed to apply answer.');
-          }
-        }
-
-        if (data.status) {
-          log('Device status: ' + data.status);
-        }
-      }, error => {
-        log('Session listener error: ' + error.message);
-      });
-    }
-
-    async function stopViewer() {
-      stopping = true;
-
-      const oldId = activeId;
-      const oldSessionId = sessionId;
-      const oldPeer = peer;
-      const oldChannel = inputChannel;
-      const oldReference = sessionReference;
-      const oldListener = sessionListener;
-
-      activeId = null;
-      sessionId = null;
-      peer = null;
-      inputChannel = null;
-      sessionReference = null;
-      sessionListener = null;
-
-      if (oldReference && oldListener) {
-        oldListener();
-      }
-
-      if (oldChannel) {
-        try {
-          oldChannel.close();
-        } catch (error) {
-          log('Data channel close error: ' + error.message);
-        }
-      }
-
-      if (oldPeer) {
-        try {
-          oldPeer.close();
-        } catch (error) {
-          log('Peer close error: ' + error.message);
-        }
-      }
-
-      releasePointer();
-
-      screen.srcObject = null;
-      viewerElement.style.display = 'none';
-
-      if (oldId && oldSessionId) {
-        try {
-          await remove(ref(db, 'sessions/' + oldId));
-          log('Firebase session removed.');
-        } catch (error) {
-          log('Could not remove Firebase session: ' + error.message);
-        }
-      }
-
-      stopping = false;
-    }
-
-    async function toggleFullscreen() {
-      try {
-        if (document.fullscreenElement) {
-          await document.exitFullscreen();
-        } else {
-          await screen.requestFullscreen();
-          log('Remote desktop entered fullscreen.');
-        }
-      } catch (error) {
-        log('Fullscreen failed: ' + error.message);
-      }
-    }
-
-    fullscreenButton.addEventListener('click', toggleFullscreen);
-
-    document.addEventListener('fullscreenchange', () => {
-      fullscreenButton.textContent =
-        document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen';
-    });
-
-    disconnectButton.addEventListener('click', async () => {
-      log('Disconnect requested.');
-
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      }
-
-      await stopViewer();
-
-      setStatus('Disconnected.');
-      renderDevices();
-    });
-
-    function sendInput(data) {
-      if (
-        inputChannel &&
-        inputChannel.readyState === 'open'
-      ) {
+    try {
         inputChannel.send(JSON.stringify(data));
-      }
+        return true;
+    } catch (error) {
+        log("Input send failed: " + error.message);
+        return false;
+    }
+}
+
+function getScreenCoordinates(event) {
+    const rect = screen.getBoundingClientRect();
+
+    if (!rect.width || !rect.height) {
+        return { x: 0.5, y: 0.5 };
     }
 
-    function getScreenCoordinates(event) {
-      const bounds = screen.getBoundingClientRect();
+    const scale = Math.min(
+        rect.width / (screen.videoWidth || rect.width),
+        rect.height / (screen.videoHeight || rect.height)
+    );
 
-      const videoWidth = screen.videoWidth;
-      const videoHeight = screen.videoHeight;
+    const renderedWidth = (screen.videoWidth || rect.width) * scale;
+    const renderedHeight = (screen.videoHeight || rect.height) * scale;
 
-      if (!videoWidth || !videoHeight) {
-        return null;
-      }
+    const offsetX = (rect.width - renderedWidth) / 2;
+    const offsetY = (rect.height - renderedHeight) / 2;
 
-      const scale = Math.min(
-        bounds.width / videoWidth,
-        bounds.height / videoHeight
-      );
+    const x = (event.clientX - rect.left - offsetX) / renderedWidth;
+    const y = (event.clientY - rect.top - offsetY) / renderedHeight;
 
-      const renderedWidth = videoWidth * scale;
-      const renderedHeight = videoHeight * scale;
+    return {
+        x: Math.max(0, Math.min(1, x)),
+        y: Math.max(0, Math.min(1, y))
+    };
+}
 
-      const offsetX = (bounds.width - renderedWidth) / 2;
-      const offsetY = (bounds.height - renderedHeight) / 2;
+function sendPosition(x, y) {
+    virtualX = Math.max(0, Math.min(1, x));
+    virtualY = Math.max(0, Math.min(1, y));
 
-      const x = (event.clientX - bounds.left - offsetX) / renderedWidth;
-      const y = (event.clientY - bounds.top - offsetY) / renderedHeight;
+    sendInput({
+        type: "move",
+        x: virtualX,
+        y: virtualY
+    });
+}
 
-      if (x < 0 || x > 1 || y < 0 || y > 1) {
-        return null;
-      }
+function buttonNumber(button) {
+    if (button === 0) return 0;
+    if (button === 1) return 1;
+    if (button === 2) return 2;
+    return -1;
+}
 
-      return { x, y };
+function releaseAllInput() {
+    for (const button of activeButtons) {
+        sendInput({
+            type: "mouseUp",
+            button
+        });
     }
 
-    function releasePointer() {
-      if (screen.hasPointerCapture?.(activePointerId)) {
+    for (const code of activeKeys) {
+        sendInput({
+            type: "keyUp",
+            code
+        });
+    }
+
+    activeButtons.clear();
+    activeKeys.clear();
+}
+
+function releasePointerLock() {
+    if (document.pointerLockElement === screen) {
+        document.exitPointerLock();
+    }
+}
+
+function cleanupListeners() {
+    if (!sessionReference) return;
+
+    if (answerListener) {
+        onValue;
+        answerListener();
+        answerListener = null;
+    }
+
+    if (statusListener) {
+        statusListener();
+        statusListener = null;
+    }
+
+    if (errorListener) {
+        errorListener();
+        errorListener = null;
+    }
+}
+
+async function stopViewer(removeSession = true) {
+    if (stopping) return;
+    stopping = true;
+
+    releasePointerLock();
+    releaseAllInput();
+    cleanupListeners();
+
+    if (peer) {
         try {
-          screen.releasePointerCapture(activePointerId);
+            peer.ontrack = null;
+            peer.onconnectionstatechange = null;
+            peer.close();
         } catch (error) {
-          log('Pointer release error: ' + error.message);
+            log("Peer cleanup: " + error.message);
         }
-      }
-
-      activePointerId = null;
     }
 
-    let activePointerId = null;
-    const pressedButtons = new Set();
+    peer = null;
+    inputChannel = null;
 
-    screen.addEventListener('pointerdown', event => {
-      event.preventDefault();
+    screen.pause();
+    screen.srcObject = null;
+    screenHint.style.display = "block";
 
-      if (activePointerId !== null) return;
-
-      activePointerId = event.pointerId;
-
-      try {
-        screen.setPointerCapture(event.pointerId);
-      } catch (error) {
-        log('Pointer capture unavailable: ' + error.message);
-      }
-
-      screen.focus();
-
-      const position = getScreenCoordinates(event);
-      if (!position) return;
-
-      pressedButtons.add(event.button);
-
-      sendInput({
-        type: 'mouseDown',
-        button: event.button,
-        x: position.x,
-        y: position.y
-      });
-    });
-
-    screen.addEventListener('pointermove', event => {
-      const position = getScreenCoordinates(event);
-      if (!position) return;
-
-      sendInput({
-        type: 'mouseMove',
-        x: position.x,
-        y: position.y
-      });
-    });
-
-    screen.addEventListener('pointerup', event => {
-      event.preventDefault();
-
-      const position = getScreenCoordinates(event);
-
-      if (position && pressedButtons.has(event.button)) {
-        sendInput({
-          type: 'mouseUp',
-          button: event.button,
-          x: position.x,
-          y: position.y
-        });
-      }
-
-      pressedButtons.delete(event.button);
-
-      if (activePointerId === event.pointerId) {
-        releasePointer();
-      }
-    });
-
-    screen.addEventListener('pointercancel', () => {
-      releaseAllButtons();
-    });
-
-    screen.addEventListener('lostpointercapture', () => {
-      releaseAllButtons();
-    });
-
-    function releaseAllButtons() {
-      for (const button of pressedButtons) {
-        sendInput({
-          type: 'mouseUp',
-          button,
-          x: 0.5,
-          y: 0.5
-        });
-      }
-
-      pressedButtons.clear();
-      activePointerId = null;
+    if (removeSession && sessionReference) {
+        try {
+            await remove(sessionReference);
+        } catch (error) {
+            log("Could not remove session: " + error.message);
+        }
     }
 
-    screen.addEventListener('contextmenu', event => {
-      event.preventDefault();
+    sessionReference = null;
+    activeId = null;
+    activeSessionId = null;
+    pointerLocked = false;
+
+    viewer.classList.remove("active");
+    welcome.style.display = "block";
+    connectionLabel.textContent = "Disconnected";
+
+    log("Remote desktop disconnected.");
+    stopping = false;
+}
+
+function waitForIceGathering(connection, timeout = 20000) {
+    return new Promise(resolve => {
+        if (connection.iceGatheringState === "complete") {
+            resolve();
+            return;
+        }
+
+        let finished = false;
+
+        const finish = () => {
+            if (finished) return;
+            finished = true;
+            connection.removeEventListener(
+                "icegatheringstatechange",
+                checkState
+            );
+            resolve();
+        };
+
+        const checkState = () => {
+            if (connection.iceGatheringState === "complete") {
+                finish();
+            }
+        };
+
+        connection.addEventListener(
+            "icegatheringstatechange",
+            checkState
+        );
+
+        setTimeout(finish, timeout);
+    });
+}
+
+async function connectViewer(deviceId) {
+    const configuration = {
+        iceServers: [
+            {
+                urls: "stun:stun.l.google.com:19302"
+            }
+        ]
+    };
+
+    peer = new RTCPeerConnection(configuration);
+
+    peer.addTransceiver("video", {
+        direction: "recvonly"
     });
 
-    screen.addEventListener('wheel', event => {
-      event.preventDefault();
+    inputChannel = peer.createDataChannel("remote-input", {
+        ordered: true
+    });
 
-      sendInput({
-        type: 'scroll',
-        deltaX: event.deltaX,
-        deltaY: event.deltaY
-      });
-    }, { passive: false });
+    inputChannel.onopen = () => {
+        log("Remote input channel connected.");
+        setStatus("Connected - mouse and keyboard ready");
+    };
 
-    document.addEventListener('keydown', event => {
-      if (!activeId || !inputChannel || inputChannel.readyState !== 'open') {
+    inputChannel.onclose = () => {
+        log("Remote input channel closed.");
+        setStatus("Input channel closed");
+        releaseAllInput();
+    };
+
+    inputChannel.onerror = () => {
+        log("Remote input channel error.");
+    };
+
+    peer.ontrack = event => {
+        const stream = event.streams[0];
+
+        if (stream) {
+            screen.srcObject = stream;
+            screen.play().catch(error => {
+                log("Video playback: " + error.message);
+            });
+
+            screenHint.style.display = "none";
+            log("Remote desktop video received.");
+        }
+    };
+
+    peer.onconnectionstatechange = () => {
+        const state = peer.connectionState;
+        log("WebRTC connection: " + state);
+        setStatus("WebRTC: " + state);
+
+        if (state === "failed" || state === "disconnected") {
+            log("Connection is not healthy. A TURN relay may be needed.");
+        }
+    };
+
+    peer.oniceconnectionstatechange = () => {
+        log("ICE connection: " + peer.iceConnectionState);
+    };
+
+    const offer = await peer.createOffer();
+    await peer.setLocalDescription(offer);
+
+    await waitForIceGathering(peer);
+
+    if (!activeId || !sessionReference) {
+        throw new Error("Session was stopped before the offer was published.");
+    }
+
+    const offerData = {
+        type: "offer",
+        sdp: peer.localDescription.sdp
+    };
+
+    await set(sessionReference, {
+        sessionId: activeSessionId,
+        offer: offerData,
+        status: "offering",
+        createdAt: Date.now()
+    });
+
+    log("WebRTC offer published.");
+
+    answerListener = onValue(
+        ref(db, `sessions/${deviceId}/answer`),
+        async snapshot => {
+            const answer = snapshot.val();
+
+            if (!answer || !answer.sdp || !peer) return;
+            if (answer.sessionId !== activeSessionId) return;
+            if (peer.currentRemoteDescription) return;
+
+            try {
+                await peer.setRemoteDescription({
+                    type: "answer",
+                    sdp: answer.sdp
+                });
+
+                log("Remote answer received.");
+                setStatus("Answer received - connecting...");
+            } catch (error) {
+                log("Could not apply answer: " + error.message);
+                setStatus("Answer error");
+            }
+        }
+    );
+
+    statusListener = onValue(
+        ref(db, `sessions/${deviceId}/status`),
+        snapshot => {
+            const status = snapshot.val();
+
+            if (status) {
+                setStatus("Remote device: " + status);
+            }
+        }
+    );
+
+    errorListener = onValue(
+        ref(db, `sessions/${deviceId}/error`),
+        snapshot => {
+            const error = snapshot.val();
+
+            if (error && error.sessionId === activeSessionId) {
+                log("Remote device error: " + error.message);
+                setStatus("Error: " + error.message);
+            }
+        }
+    );
+}
+
+async function startViewer(deviceId, deviceName) {
+    if (activeId) {
+        await stopViewer();
+    }
+
+    activeId = deviceId;
+    activeSessionId = crypto.randomUUID();
+    sessionReference = ref(db, `sessions/${deviceId}`);
+
+    viewer.classList.add("active");
+    welcome.style.display = "none";
+
+    viewerTitle.textContent = deviceName || deviceId;
+    setStatus("Starting connection...");
+    screenHint.style.display = "block";
+
+    log("Starting session with " + deviceId);
+
+    try {
+        await connectViewer(deviceId);
+    } catch (error) {
+        log("Connection failed: " + error.message);
+        setStatus("Connection failed: " + error.message);
+        await stopViewer();
+    }
+}
+
+function renderDevices(data) {
+    devicesContainer.innerHTML = "";
+
+    if (!data || typeof data !== "object") {
+        devicesContainer.innerHTML =
+            '<div class="empty">No devices have registered.</div>';
         return;
-      }
+    }
 
-      if (
-        ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)
-      ) {
+    const entries = Object.entries(data);
+
+    if (!entries.length) {
+        devicesContainer.innerHTML =
+            '<div class="empty">No devices have registered.</div>';
         return;
-      }
+    }
 
-      event.preventDefault();
+    for (const [id, device] of entries) {
+        const item = document.createElement("div");
+        item.className = "device";
 
-      sendInput({
-        type: 'keyDown',
+        const name = device?.name || device?.username || id;
+        const status = device?.status || "Registered";
+
+        const title = document.createElement("div");
+        title.className = "device-name";
+        title.textContent = name;
+
+        const info = document.createElement("div");
+        info.className = "device-info";
+        info.textContent = `${id} · ${status}`;
+
+        const button = document.createElement("button");
+        button.textContent = "Connect";
+        button.disabled = Boolean(activeId && activeId === id);
+        button.addEventListener("click", () => {
+            startViewer(id, name);
+        });
+
+        item.append(title, info, button);
+        devicesContainer.appendChild(item);
+    }
+}
+
+function renderApprovals(data) {
+    approvalsContainer.innerHTML = "";
+
+    if (!data || typeof data !== "object") {
+        approvalsContainer.innerHTML =
+            '<div class="empty">No approval records.</div>';
+        return;
+    }
+
+    const entries = Object.entries(data);
+
+    if (!entries.length) {
+        approvalsContainer.innerHTML =
+            '<div class="empty">No approval records.</div>';
+        return;
+    }
+
+    for (const [id, approval] of entries) {
+        const item = document.createElement("div");
+        item.className = "device";
+
+        const title = document.createElement("div");
+        title.className = "device-name";
+        title.textContent =
+            approval?.name || approval?.deviceName || id;
+
+        const info = document.createElement("div");
+        info.className = "device-info";
+        info.textContent =
+            approval?.status || (approval?.approved ? "Approved" : "Approval record");
+
+        item.append(title, info);
+        approvalsContainer.appendChild(item);
+    }
+}
+
+onValue(
+    ref(db, "devices"),
+    snapshot => {
+        renderDevices(snapshot.val());
+        connectionLabel.textContent = "Firebase connected";
+    },
+    error => {
+        connectionLabel.textContent = "Firebase error";
+        log("Device listener error: " + error.message);
+    }
+);
+
+onValue(
+    ref(db, "approvals"),
+    snapshot => {
+        renderApprovals(snapshot.val());
+    },
+    error => {
+        log("Approval listener error: " + error.message);
+    }
+);
+
+screen.addEventListener("mousemove", event => {
+    if (!activeId) return;
+
+    if (document.pointerLockElement === screen) {
+        const rect = screen.getBoundingClientRect();
+
+        if (rect.width && rect.height) {
+            virtualX += event.movementX / rect.width;
+            virtualY += event.movementY / rect.height;
+
+            sendPosition(virtualX, virtualY);
+        }
+    } else {
+        const position = getScreenCoordinates(event);
+        sendPosition(position.x, position.y);
+    }
+});
+
+screen.addEventListener("click", async event => {
+    if (!activeId || document.pointerLockElement === screen) return;
+
+    const position = getScreenCoordinates(event);
+    virtualX = position.x;
+    virtualY = position.y;
+
+    try {
+        await screen.requestPointerLock();
+        log("Mouse captured. Press Escape to release.");
+    } catch (error) {
+        log("Mouse capture failed: " + error.message);
+    }
+});
+
+document.addEventListener("pointerlockchange", () => {
+    pointerLocked = document.pointerLockElement === screen;
+
+    if (pointerLocked) {
+        log("Pointer locked to remote desktop.");
+        screen.style.cursor = "none";
+    } else {
+        screen.style.cursor = "crosshair";
+        releaseAllInput();
+
+        if (activeId) {
+            log("Pointer released.");
+        }
+    }
+});
+
+screen.addEventListener("pointerdown", event => {
+    if (!activeId) return;
+
+    const button = buttonNumber(event.button);
+    if (button < 0) return;
+
+    if (document.pointerLockElement !== screen) {
+        const position = getScreenCoordinates(event);
+        sendPosition(position.x, position.y);
+    }
+
+    if (!activeButtons.has(button)) {
+        activeButtons.add(button);
+
+        sendInput({
+            type: "mouseDown",
+            button
+        });
+    }
+
+    event.preventDefault();
+});
+
+document.addEventListener("pointerup", event => {
+    if (!activeId) return;
+
+    const button = buttonNumber(event.button);
+    if (button < 0 || !activeButtons.has(button)) return;
+
+    activeButtons.delete(button);
+
+    sendInput({
+        type: "mouseUp",
+        button
+    });
+});
+
+screen.addEventListener("contextmenu", event => {
+    event.preventDefault();
+});
+
+screen.addEventListener("wheel", event => {
+    if (!activeId) return;
+
+    const amount = Math.sign(event.deltaY) *
+        Math.max(1, Math.round(Math.abs(event.deltaY) / 100));
+
+    sendInput({
+        type: "scroll",
+        amount
+    });
+
+    event.preventDefault();
+}, { passive: false });
+
+document.addEventListener("keydown", event => {
+    if (!activeId || document.pointerLockElement !== screen) return;
+
+    if (event.code === "Escape") return;
+
+    event.preventDefault();
+
+    if (activeKeys.has(event.code)) return;
+
+    activeKeys.add(event.code);
+
+    sendInput({
+        type: "keyDown",
         key: event.key,
         code: event.code,
         keyCode: event.keyCode
-      });
     });
+});
 
-    document.addEventListener('keyup', event => {
-      if (!activeId || !inputChannel || inputChannel.readyState !== 'open') {
-        return;
-      }
+document.addEventListener("keyup", event => {
+    if (!activeId) return;
+    if (!activeKeys.has(event.code)) return;
 
-      event.preventDefault();
+    activeKeys.delete(event.code);
 
-      sendInput({
-        type: 'keyUp',
+    sendInput({
+        type: "keyUp",
         key: event.key,
         code: event.code,
         keyCode: event.keyCode
-      });
     });
+});
 
-    window.addEventListener('blur', () => {
-      releaseAllButtons();
-    });
+window.addEventListener("blur", () => {
+    releaseAllInput();
+});
 
-    window.addEventListener('beforeunload', () => {
-      if (activeId) {
-        remove(ref(db, 'sessions/' + activeId));
-      }
+fullscreenButton.addEventListener("click", async () => {
+    try {
+        if (document.fullscreenElement) {
+            await document.exitFullscreen();
+        } else {
+            await screen.requestFullscreen();
+        }
+    } catch (error) {
+        log("Fullscreen failed: " + error.message);
+    }
+});
 
-      if (peer) {
+document.addEventListener("fullscreenchange", () => {
+    fullscreenButton.textContent =
+        document.fullscreenElement ? "Exit Fullscreen" : "Fullscreen";
+});
+
+disconnectButton.addEventListener("click", () => {
+    stopViewer();
+});
+
+window.addEventListener("beforeunload", () => {
+    releaseAllInput();
+
+    if (peer) {
         peer.close();
-      }
-    });
+    }
 
-    log('Dashboard initialized.');
-  </script>
+    if (sessionReference) {
+        remove(sessionReference);
+    }
+});
+
+log("LightingMod dashboard initialized.");
+</script>
 </body>
 </html>
