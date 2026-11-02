@@ -90,6 +90,19 @@
       display: block;
       cursor: crosshair;
       touch-action: none;
+      outline: none;
+    }
+
+    #screen::-webkit-media-controls {
+      display: none !important;
+    }
+
+    #screen::-webkit-media-controls-enclosure {
+      display: none !important;
+    }
+
+    #screen::-webkit-media-controls-panel {
+      display: none !important;
     }
 
     #screen:fullscreen {
@@ -166,7 +179,14 @@
 
       <div id="status">Not connected</div>
 
-      <video id="screen" autoplay playsinline></video>
+      <video
+        id="screen"
+        autoplay
+        playsinline
+        disablepictureinpicture
+        disableremoteplayback
+        controlslist="nodownload nofullscreen noremoteplayback"
+      ></video>
 
       <p class="muted">
         Click the desktop to enter fullscreen. Press Escape to exit.
@@ -630,9 +650,11 @@
       stopping = false;
     }
 
-    async function enterFullscreen() {
+    async function toggleFullscreen() {
       try {
-        if (!document.fullscreenElement) {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        } else {
           await screen.requestFullscreen();
           log('Remote desktop entered fullscreen.');
         }
@@ -641,21 +663,17 @@
       }
     }
 
-    fullscreenButton.addEventListener('click', enterFullscreen);
+    fullscreenButton.addEventListener('click', toggleFullscreen);
 
     screen.addEventListener('click', () => {
-      enterFullscreen();
+      if (!document.fullscreenElement) {
+        toggleFullscreen();
+      }
     });
 
     document.addEventListener('fullscreenchange', () => {
       fullscreenButton.textContent =
         document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen';
-    });
-
-    fullscreenButton.addEventListener('click', async () => {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      }
     });
 
     disconnectButton.addEventListener('click', async () => {
@@ -704,9 +722,13 @@
       const x = (event.clientX - bounds.left - offsetX) / renderedWidth;
       const y = (event.clientY - bounds.top - offsetY) / renderedHeight;
 
+      if (x < 0 || x > 1 || y < 0 || y > 1) {
+        return null;
+      }
+
       return {
-        x: Math.max(0, Math.min(1, x)),
-        y: Math.max(0, Math.min(1, y))
+        x,
+        y
       };
     }
 
