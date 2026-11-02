@@ -1,186 +1,76 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LightingMod approvals</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LightingMod Remote Desktop</title>
 <style>
-:root{color-scheme:dark;--bg:#090e17;--panel:#121c2b;--line:#26364d;--muted:#91a2ba;--green:#55d6a0;--red:#ff7b83;--yellow:#f0c879}
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 20% 0%,#1b2c49 0,transparent 48%),var(--bg);color:#edf3ff;font:15px/1.5 system-ui,Segoe UI,sans-serif}
-main{max-width:900px;margin:42px auto;padding:0 22px}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:22px}
-h1{font-size:26px;margin:0}
-.muted{color:var(--muted);font-size:13px}
-.panel{background:linear-gradient(180deg,#152235,#101824);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 18px 50px #0003}
-.device{padding:16px;border:1px solid var(--line);border-radius:12px;background:#0d1521;margin:12px 0}
-.deviceHead{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
-.device strong{font-size:16px}
-.pill{border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:12px}
-.approved{color:var(--green);border-color:#27684f}
-.denied{color:var(--red);border-color:#713943}
-.pending{color:var(--yellow);border-color:#75602e}
-.meta{margin-top:7px;color:var(--muted);font-size:13px}
-.empty{padding:24px;text-align:center;color:var(--muted)}
-#connection{color:var(--muted);font-size:12px}
-.foot{margin-top:18px;color:var(--muted);font-size:12px}
-.actions{display:flex;gap:10px;margin-top:16px}
-.action{border:1px solid var(--line);border-radius:8px;padding:9px 20px;font:inherit;font-weight:600;cursor:pointer;background:#18263a;color:#edf3ff}
-.action.approve{border-color:#27684f;color:var(--green)}
-.action.deny{border-color:#713943;color:var(--red)}
-.action:hover:not(:disabled){filter:brightness(1.25)}
-.action:disabled{opacity:.5;cursor:not-allowed}
-</style>
-</head>
-<body>
-<main>
-<header class="top">
-<div>
-<h1>LightingMod</h1>
-<div class="muted">Device approval status</div>
-</div>
-<span id="connection">Connecting to Firebase…</span>
-</header>
-
-<section class="panel">
-<h2>Connected Minecraft devices</h2>
-<div id="devices"><div class="empty">Waiting for a device…</div></div>
-</section>
-
-<div class="foot">This page displays the latest approval decision submitted by each LightingMod client.</div>
+:root{color-scheme:dark;--bg:#090e17;--panel:#121c2b;--line:#26364d;--muted:#91a2ba;--green:#55d6a0;--red:#ff7b83;--yellow:#f0c879}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 20% 0%,#1b2c49 0,transparent 48%),var(--bg);color:#edf3ff;font:15px/1.5 system-ui,Segoe UI,sans-serif}main{max-width:1100px;margin:36px auto;padding:0 20px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}h1{font-size:26px;margin:0}h2{font-size:18px;margin:0 0 12px}.muted,.meta{color:var(--muted);font-size:13px}.panel{background:linear-gradient(180deg,#152235,#101824);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:18px}.device{padding:15px;border:1px solid var(--line);border-radius:12px;background:#0d1521;margin:12px 0}.deviceHead{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.pill{border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:12px}.approved{color:var(--green);border-color:#27684f}.denied{color:var(--red);border-color:#713943}.pending{color:var(--yellow);border-color:#75602e}.meta{margin-top:6px}.connectForm{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.connectForm input{min-width:220px;flex:1;background:#08111d;color:white;border:1px solid var(--line);border-radius:8px;padding:10px}.connectForm button,button{background:#245b91;color:white;border:0;border-radius:8px;padding:10px 14px;font-weight:650;cursor:pointer}.connectForm button:disabled,button:disabled{opacity:.5;cursor:not-allowed}.danger{background:#803c48}.empty{padding:20px;text-align:center;color:var(--muted)}#connection{color:var(--muted);font-size:12px}#viewer{display:none}#screen{width:100%;max-height:75vh;object-fit:contain;background:#030609;border:1px solid var(--line);border-radius:10px;touch-action:none;cursor:crosshair}#viewerBar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.foot{margin:16px 0;color:var(--muted);font-size:12px}
+</style></head><body><main>
+<header class="top"><div><h1>LightingMod</h1><div class="muted">Approved PC sessions</div></div><span id="connection">Connecting to Firebase…</span></header>
+<section class="panel"><h2>Minecraft devices</h2><div id="devices"><div class="empty">Waiting for a device…</div></div></section>
+<section class="panel" id="viewer"><div id="viewerBar"><div><h2 id="viewerTitle">Remote desktop</h2><div class="muted" id="viewerStatus">Connecting…</div></div><button class="danger" id="disconnect">Disconnect</button></div><img id="screen" alt="Live PC screen"><div class="muted">Click the screen to control the mouse. Focus the screen and type to send keyboard input. Press Escape here to release keyboard focus.</div></section>
+<div class="foot">Screen sharing and remote input are available only while the PC owner has approved the session in Minecraft. The pairing token is stored locally in config/lightingmod.properties and is never sent to Firebase.</div>
 </main>
-
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js';
-import {getDatabase,ref,onValue,set} from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js';
+import {getDatabase,ref,onValue} from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js';
 import {firebaseConfig} from './firebase-config.js';
-
-const app=initializeApp(firebaseConfig);
-const db=getDatabase(app);
-const devicesEl=document.getElementById('devices');
-const connectionEl=document.getElementById('connection');
-
-let devices={};
-let approvals={};
-
-async function saveDecision(id,decision,buttons){
-    buttons.forEach(button=>button.disabled=true);
-
-    try{
-        await set(ref(db,'approvals/'+id),{
-            decision:decision,
-            deviceId:id,
-            updatedAt:Date.now()
-        });
-        connectionEl.textContent='Decision saved';
-    }catch(error){
-        connectionEl.textContent='Database error: '+error.message;
-        buttons.forEach(button=>button.disabled=false);
-    }
+const app=initializeApp(firebaseConfig),db=getDatabase(app);
+const devicesEl=document.getElementById('devices'),connectionEl=document.getElementById('connection');
+const viewer=document.getElementById('viewer'),screen=document.getElementById('screen');
+let devices={},approvals={},socket=null,activeId=null,screenSize={width:1,height:1},lastFrameUrl=null;
+function send(data){if(socket&&socket.readyState===WebSocket.OPEN)socket.send(JSON.stringify(data));}
+function stopViewer(message='Disconnected'){
+ if(socket){socket.onclose=null;socket.close();socket=null;}
+ if(lastFrameUrl){URL.revokeObjectURL(lastFrameUrl);lastFrameUrl=null;}
+ screen.removeAttribute('src');viewer.style.display='none';activeId=null;
 }
-
+function connectDevice(id,url,token){
+ if((approvals[id]?.decision||'').toLowerCase()!=='approved'){alert('This PC has not approved remote access in Minecraft.');return;}
+ stopViewer();
+ if(!/^wss?:\/\//i.test(url)){alert('Enter a WebSocket address such as ws://192.168.1.20:8765');return;}
+ activeId=id;viewer.style.display='block';document.getElementById('viewerTitle').textContent=devices[id]?.name||'Remote desktop';
+ document.getElementById('viewerStatus').textContent='Connecting to PC…';
+ try{socket=new WebSocket(url);}catch(e){document.getElementById('viewerStatus').textContent=e.message;return;}
+ socket.binaryType='blob';
+ socket.onopen=()=>socket.send(JSON.stringify({type:'auth',token}));
+ socket.onmessage=event=>{
+  if(typeof event.data==='string'){
+   const data=JSON.parse(event.data);
+   if(data.type==='ready'){screenSize={width:data.width,height:data.height};document.getElementById('viewerStatus').textContent=`Live · ${data.width} × ${data.height}`;}
+   return;
+  }
+  const url=URL.createObjectURL(event.data),old=lastFrameUrl;lastFrameUrl=url;screen.src=url;if(old)URL.revokeObjectURL(old);
+ };
+ socket.onerror=()=>document.getElementById('viewerStatus').textContent='Connection failed. Check the address, firewall, and pairing token.';
+ socket.onclose=event=>{if(activeId===id)document.getElementById('viewerStatus').textContent=`Disconnected (${event.reason||event.code})`;};
+}
 function render(){
-    const ids=new Set([...Object.keys(devices),...Object.keys(approvals)]);
-    devicesEl.replaceChildren();
-
-    if(!ids.size){
-        const empty=document.createElement('div');
-        empty.className='empty';
-        empty.textContent='No Minecraft devices have connected yet.';
-        devicesEl.append(empty);
-        return;
-    }
-
-    for(const id of ids){
-        const device=devices[id]||{};
-        const approval=approvals[id]||{};
-        const decision=(approval.decision||'pending').toLowerCase();
-
-        const card=document.createElement('article');
-        card.className='device';
-
-        const head=document.createElement('div');
-        head.className='deviceHead';
-
-        const name=document.createElement('strong');
-        name.textContent=device.name||'Minecraft PC';
-
-        const status=document.createElement('span');
-        status.className='pill '+(
-            decision==='approved'?'approved':
-            decision==='denied'?'denied':'pending'
-        );
-
-        status.textContent=
-            decision==='approved'?'Approved':
-            decision==='denied'?'Denied':
-            'Waiting for decision';
-
-        head.append(name,status);
-
-        const meta=document.createElement('div');
-        meta.className='meta';
-
-        const seen=device.lastSeen?
-            new Date(device.lastSeen).toLocaleString():
-            'Not reported';
-
-        meta.textContent=
-            `${device.platform||'Unknown platform'} · Minecraft ${device.minecraftVersion||'unknown'} · Last seen ${seen}`;
-
-        const idLine=document.createElement('div');
-        idLine.className='meta';
-        idLine.textContent='Device ID: '+id;
-
-        const changed=document.createElement('div');
-        changed.className='meta';
-        changed.textContent=approval.updatedAt?
-            'Decision updated: '+new Date(approval.updatedAt).toLocaleString():
-            '';
-
-        const actions=document.createElement('div');
-        actions.className='actions';
-
-        const approve=document.createElement('button');
-        approve.type='button';
-        approve.className='action approve';
-        approve.textContent='Approve';
-
-        const deny=document.createElement('button');
-        deny.type='button';
-        deny.className='action deny';
-        deny.textContent='Deny';
-
-        const buttons=[approve,deny];
-
-        approve.addEventListener('click',()=>{
-            saveDecision(id,'approved',buttons);
-        });
-
-        deny.addEventListener('click',()=>{
-            saveDecision(id,'denied',buttons);
-        });
-
-        actions.append(approve,deny);
-        card.append(head,meta,idLine,changed,actions);
-        devicesEl.append(card);
-    }
+ const ids=new Set([...Object.keys(devices),...Object.keys(approvals)]);devicesEl.replaceChildren();
+ if(!ids.size){const empty=document.createElement('div');empty.className='empty';empty.textContent='No Minecraft devices have connected yet.';devicesEl.append(empty);return;}
+ for(const id of ids){
+  const device=devices[id]||{},approval=approvals[id]||{},decision=(approval.decision||'pending').toLowerCase();
+  const card=document.createElement('article');card.className='device';const head=document.createElement('div');head.className='deviceHead';
+  const name=document.createElement('strong');name.textContent=device.name||'Minecraft PC';const status=document.createElement('span');status.className='pill '+(decision==='approved'?'approved':decision==='denied'?'denied':'pending');status.textContent=decision==='approved'?'Approved':decision==='denied'?'Denied':'Waiting for Minecraft approval';head.append(name,status);
+  const meta=document.createElement('div');meta.className='meta';meta.textContent=`${device.platform||'Unknown platform'} · Minecraft ${device.minecraftVersion||'unknown'} · Last seen ${device.lastSeen?new Date(device.lastSeen).toLocaleString():'Not reported'}`;
+  const idLine=document.createElement('div');idLine.className='meta';idLine.textContent='Device ID: '+id;card.append(head,meta,idLine);
+  if(decision==='approved'){
+   const form=document.createElement('div');form.className='connectForm';
+   const address=document.createElement('input');address.placeholder='Agent WebSocket URL (ws://host:8765)';address.value=localStorage.getItem('lightingmod-url-'+id)||'ws://127.0.0.1:8765';
+   const key=document.createElement('input');key.placeholder='Pairing token from the PC';key.type='password';key.autocomplete='off';
+   const button=document.createElement('button');button.textContent='Connect';button.onclick=()=>{localStorage.setItem('lightingmod-url-'+id,address.value.trim());connectDevice(id,address.value.trim(),key.value.trim());};form.append(address,key,button);card.append(form);
+  }
+  devicesEl.append(card);
+ }
+ if(activeId&&(approvals[activeId]?.decision||'').toLowerCase()!=='approved')stopViewer('Approval revoked');
 }
-
-onValue(ref(db,'devices'),snap=>{
-    devices=snap.val()||{};
-    render();
-    connectionEl.textContent='Live';
-},err=>{
-    connectionEl.textContent='Database error: '+err.message;
-});
-
-onValue(ref(db,'approvals'),snap=>{
-    approvals=snap.val()||{};
-    render();
-},err=>{
-    connectionEl.textContent='Database error: '+err.message;
-});
-</script>
-</body>
-</html>
+onValue(ref(db,'devices'),snap=>{devices=snap.val()||{};render();connectionEl.textContent='Firebase live';},err=>connectionEl.textContent='Database error: '+err.message);
+onValue(ref(db,'approvals'),snap=>{approvals=snap.val()||{};render();},err=>connectionEl.textContent='Database error: '+err.message);
+document.getElementById('disconnect').onclick=()=>stopViewer();
+screen.addEventListener('pointermove',event=>{if(!socket||socket.readyState!==WebSocket.OPEN)return;const rect=screen.getBoundingClientRect();send({type:'move',x:Math.round((event.clientX-rect.left)/rect.width*screenSize.width),y:Math.round((event.clientY-rect.top)/rect.height*screenSize.height)});});
+screen.addEventListener('pointerdown',event=>{screen.focus();const rect=screen.getBoundingClientRect();send({type:'move',x:Math.round((event.clientX-rect.left)/rect.width*screenSize.width),y:Math.round((event.clientY-rect.top)/rect.height*screenSize.height)});send({type:'click',button:event.button});});
+screen.tabIndex=0;screen.addEventListener('keydown',event=>{if(event.key==='Escape'){screen.blur();return;}event.preventDefault();send({type:'keyDown',key:normalizeKey(event.key)});});screen.addEventListener('keyup',event=>{event.preventDefault();send({type:'keyUp',key:normalizeKey(event.key)});});
+screen.addEventListener('wheel',event=>{event.preventDefault();send({type:'scroll',amount:Math.sign(event.deltaY)*Math.max(1,Math.round(Math.abs(event.deltaY)/100))});},{passive:false});
+function normalizeKey(key){const names={ ' ':'SPACE','ArrowUp':'UP','ArrowDown':'DOWN','ArrowLeft':'LEFT','ArrowRight':'RIGHT','Control':'CTRL','Meta':'META',' ':'SPACE','PageUp':'PAGE_UP','PageDown':'PAGE_DOWN' };return names[key]||key.toUpperCase();}
+window.addEventListener('beforeunload',()=>{if(socket)socket.close();});
+</script></body></html>
