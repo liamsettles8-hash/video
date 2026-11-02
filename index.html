@@ -1,28 +1,52 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LightingMod Remote</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LightingMod approvals</title>
 <style>
-:root{color-scheme:dark;--bg:#090e17;--panel:#121c2b;--line:#26364d;--muted:#91a2ba;--accent:#91a3ff;--green:#55d6a0;--red:#ff7b83}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 20% 0%,#1b2c49 0,transparent 48%),var(--bg);color:#edf3ff;font:15px/1.5 system-ui,Segoe UI,sans-serif}main{max-width:1120px;margin:38px auto;padding:0 22px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:25px}h1{font-size:25px;margin:0}.sub,.muted{color:var(--muted);font-size:13px}.pill{border:1px solid var(--line);border-radius:999px;padding:6px 11px;color:var(--muted);font-size:12px}.grid{display:grid;grid-template-columns:310px 1fr;gap:18px}.panel{background:linear-gradient(180deg,#152235,#101824);border:1px solid var(--line);border-radius:16px;padding:19px;box-shadow:0 18px 50px #0003}h2{font-size:15px;margin:0 0 14px}.device,.authbox{padding:14px;border:1px solid var(--line);border-radius:12px;background:#0d1521}.device strong{display:block}.status{margin-top:6px;color:#f0c879}.screen{aspect-ratio:16/9;background:#080d14;border:1px solid #29384e;border-radius:12px;display:grid;place-items:center;text-align:center;color:var(--muted);overflow:hidden}.screen video{width:100%;height:100%;object-fit:contain;background:#000}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}button{border:0;border-radius:9px;padding:10px 14px;font-weight:650;cursor:pointer;background:var(--accent);color:#0b1020}button.secondary{background:#26364d;color:#e6edf8}button:disabled{opacity:.4;cursor:not-allowed}input{display:block;width:100%;margin:9px 0;padding:11px 12px;border:1px solid var(--line);border-radius:9px;background:#0a111c;color:#fff}.notice{margin-top:18px;padding:12px 14px;border:1px solid #66532d;background:#292315;border-radius:11px;color:#f0d59c;font-size:13px}.msg{min-height:20px;margin-top:10px;color:var(--muted);font-size:13px}.hidden{display:none!important}.foot{margin-top:20px;color:var(--muted);font-size:12px}@media(max-width:760px){.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
+:root{color-scheme:dark;--bg:#090e17;--panel:#121c2b;--line:#26364d;--muted:#91a2ba;--green:#55d6a0;--red:#ff7b83;--yellow:#f0c879}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 20% 0%,#1b2c49 0,transparent 48%),var(--bg);color:#edf3ff;font:15px/1.5 system-ui,Segoe UI,sans-serif}main{max-width:900px;margin:42px auto;padding:0 22px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:22px}h1{font-size:26px;margin:0}.muted{color:var(--muted);font-size:13px}.panel{background:linear-gradient(180deg,#152235,#101824);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 18px 50px #0003}.device{padding:16px;border:1px solid var(--line);border-radius:12px;background:#0d1521;margin:12px 0}.deviceHead{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.device strong{font-size:16px}.pill{border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:12px}.approved{color:var(--green);border-color:#27684f}.denied{color:var(--red);border-color:#713943}.pending{color:var(--yellow);border-color:#75602e}.meta{margin-top:7px;color:var(--muted);font-size:13px}.empty{padding:24px;text-align:center;color:var(--muted)}#connection{color:var(--muted);font-size:12px}.foot{margin-top:18px;color:var(--muted);font-size:12px}
 </style>
 </head>
-<body><main>
-<header class="top"><div><h1>LightingMod Remote</h1><div class="sub">Authenticated dashboard · authorized sessions only</div></div><span class="pill" id="authState">Checking Firebase…</span></header>
-<section class="panel" id="authPanel"><h2 id="authTitle">Sign in</h2><div class="authbox"><form id="authForm"><input id="email" type="email" autocomplete="email" placeholder="Email" required><input id="password" type="password" autocomplete="current-password" placeholder="Password" minlength="6" required><div class="actions"><button id="submitAuth" type="submit">Sign in</button><button class="secondary" id="toggleAuth" type="button">Create account</button></div></form><div class="msg" id="authMessage" role="status"></div></div></section>
-<section class="grid hidden" id="dashboard" style="margin-top:18px"><aside class="panel"><h2>Devices</h2><div class="device"><strong>Admin PC</strong><div class="muted">Windows 11 · Fabric 1.21.11</div><div class="status" id="deviceStatus">No approved device connected</div></div><div class="actions"><button id="connect" disabled>Connect</button><button class="secondary" id="disconnect" disabled>Disconnect</button><button class="secondary" id="logout">Sign out</button></div><p class="muted" style="margin-top:14px">A device will appear after its owner approves pairing in Minecraft.</p></aside>
-<section class="panel"><h2>Live desktop</h2><div class="screen" id="screen"><div><div style="font-size:36px">▣</div><div>Waiting for an approved device</div><div class="muted">No screen data is being received</div></div></div><div class="actions"><button class="secondary" disabled>Fullscreen</button></div><div class="notice">Screen sharing must be visibly enabled on the admin PC. The owner must be able to stop the session and revoke access at any time.</div></section></section>
-<div class="foot">Firebase Authentication is connected to videos-a549d. Device pairing and WebRTC video transport are not implemented in this build.</div>
+<body>
+<main>
+<header class="top"><div><h1>LightingMod</h1><div class="muted">Device approval status</div></div><span id="connection">Connecting to Firebase…</span></header>
+<section class="panel"><h2>Connected Minecraft devices</h2><div id="devices"><div class="empty">Waiting for a device…</div></div></section>
+<div class="foot">This page displays the latest approval decision submitted by each LightingMod client.</div>
 </main>
 <script type="module">
-import { firebaseConfig } from './firebase-config.js';
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js';
-const app=initializeApp(firebaseConfig);const auth=getAuth(app);
-const authPanel=document.getElementById('authPanel');const dashboard=document.getElementById('dashboard');const form=document.getElementById('authForm');const email=document.getElementById('email');const password=document.getElementById('password');const message=document.getElementById('authMessage');const submit=document.getElementById('submitAuth');const toggle=document.getElementById('toggleAuth');const title=document.getElementById('authTitle');const state=document.getElementById('authState');let registering=false;
-toggle.addEventListener('click',()=>{registering=!registering;title.textContent=registering?'Create account':'Sign in';submit.textContent=registering?'Register':'Sign in';toggle.textContent=registering?'Back to sign in':'Create account';password.autocomplete=registering?'new-password':'current-password';message.textContent='';});
-form.addEventListener('submit',async event=>{event.preventDefault();submit.disabled=true;message.textContent='Connecting…';try{if(registering)await createUserWithEmailAndPassword(auth,email.value.trim(),password.value);else await signInWithEmailAndPassword(auth,email.value.trim(),password.value);message.textContent='';}catch(error){message.textContent=error.message;}finally{submit.disabled=false;}});
-document.getElementById('logout').addEventListener('click',()=>signOut(auth));
-onAuthStateChanged(auth,user=>{const signedIn=!!user;authPanel.classList.toggle('hidden',signedIn);dashboard.classList.toggle('hidden',!signedIn);state.textContent=signedIn?user.email:'Not signed in';});
-</script></body></html>
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js';
+import {getDatabase,ref,onValue} from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js';
+import {firebaseConfig} from './firebase-config.js';
+const app=initializeApp(firebaseConfig);
+const db=getDatabase(app);
+const devicesEl=document.getElementById('devices');
+const connectionEl=document.getElementById('connection');
+let devices={};
+let approvals={};
+function render(){
+ const ids=new Set([...Object.keys(devices),...Object.keys(approvals)]);
+ devicesEl.replaceChildren();
+ if(!ids.size){const empty=document.createElement('div');empty.className='empty';empty.textContent='No Minecraft devices have connected yet.';devicesEl.append(empty);return;}
+ for(const id of ids){
+  const device=devices[id]||{};
+  const approval=approvals[id]||{};
+  const decision=(approval.decision||'pending').toLowerCase();
+  const card=document.createElement('article');card.className='device';
+  const head=document.createElement('div');head.className='deviceHead';
+  const name=document.createElement('strong');name.textContent=device.name||'Minecraft PC';
+  const status=document.createElement('span');status.className='pill '+(decision==='approved'?'approved':decision==='denied'?'denied':'pending');status.textContent=decision==='approved'?'Approved':decision==='denied'?'Denied':'Waiting for decision';
+  head.append(name,status);
+  const meta=document.createElement('div');meta.className='meta';
+  const seen=device.lastSeen?new Date(device.lastSeen).toLocaleString():'Not reported';
+  meta.textContent=`${device.platform||'Unknown platform'} · Minecraft ${device.minecraftVersion||'unknown'} · Last seen ${seen}`;
+  const idLine=document.createElement('div');idLine.className='meta';idLine.textContent='Device ID: '+id;
+  const changed=document.createElement('div');changed.className='meta';changed.textContent=approval.updatedAt?'Decision updated: '+new Date(approval.updatedAt).toLocaleString():'';
+  card.append(head,meta,idLine,changed);devicesEl.append(card);
+ }
+}
+onValue(ref(db,'devices'),snap=>{devices=snap.val()||{};render();connectionEl.textContent='Live';},err=>{connectionEl.textContent='Database error: '+err.message;});
+onValue(ref(db,'approvals'),snap=>{approvals=snap.val()||{};render();},err=>{connectionEl.textContent='Database error: '+err.message;});
+</script>
+</body>
+</html>
