@@ -1,36 +1,242 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LightingMod Remote Desktop</title>
+<link rel="icon" href="data:,">
 <style>
-:root{color-scheme:dark;--bg:#090e17;--panel:#121c2b;--line:#26364d;--muted:#91a2ba;--green:#55d6a0;--red:#ff7b83;--yellow:#f0c879}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 20% 0%,#1b2c49 0,transparent 48%),var(--bg);color:#edf3ff;font:15px/1.5 system-ui,Segoe UI,sans-serif}main{max-width:1100px;margin:36px auto;padding:0 20px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}h1{font-size:26px;margin:0}h2{font-size:18px;margin:0 0 12px}.muted,.meta{color:var(--muted);font-size:13px}.panel{background:linear-gradient(180deg,#152235,#101824);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:18px}.device{padding:15px;border:1px solid var(--line);border-radius:12px;background:#0d1521;margin:12px 0}.deviceHead{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.pill{border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:12px}.approved{color:var(--green);border-color:#27684f}.denied{color:var(--red);border-color:#713943}.pending{color:var(--yellow);border-color:#75602e}.device button,button{background:#245b91;color:white;border:0;border-radius:8px;padding:10px 14px;font-weight:650;cursor:pointer}.danger{background:#803c48}.empty{padding:20px;text-align:center;color:var(--muted)}#connection{color:var(--muted);font-size:12px}#viewer{display:none}#screen{display:block;width:100%;height:auto;aspect-ratio:16/9;max-height:75vh;object-fit:contain;background:#030609;border:1px solid var(--line);border-radius:10px;touch-action:none;cursor:crosshair}#viewerBar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.foot{margin:16px 0;color:var(--muted);font-size:12px}
-</style></head><body><main>
-<header class="top"><div><h1>LightingMod</h1><div class="muted">Firebase video sessions</div></div><span id="connection">Connecting to Firebase…</span></header>
+:root{color-scheme:dark;--bg:#090e17;--panel:#121c2b;--line:#26364d;--muted:#91a2ba;--green:#55d6a0;--red:#ff7b83;--yellow:#f0c879}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 20% 0%,#1b2c49 0,transparent 48%),var(--bg);color:#edf3ff;font:15px/1.5 system-ui,Segoe UI,sans-serif}main{max-width:1100px;margin:36px auto;padding:0 20px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}h1{font-size:26px;margin:0}h2{font-size:18px;margin:0 0 12px}.muted,.meta{color:var(--muted);font-size:13px}.panel{background:linear-gradient(180deg,#152235,#101824);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:18px}.device{padding:15px;border:1px solid var(--line);border-radius:12px;background:#0d1521;margin:12px 0}.deviceHead{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.pill{border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:12px}.approved{color:var(--green);border-color:#27684f}.denied{color:var(--red);border-color:#713943}.pending{color:var(--yellow);border-color:#75602e}.device button,button{background:#245b91;color:white;border:0;border-radius:8px;padding:10px 14px;font-weight:650;cursor:pointer}.danger{background:#803c48}.empty{padding:20px;text-align:center;color:var(--muted)}#connection{color:var(--muted);font-size:12px}#viewer{display:none}#screen{display:block;width:100%;height:auto;aspect-ratio:16/9;max-height:75vh;object-fit:contain;background:#030609;border:1px solid var(--line);border-radius:10px;touch-action:none;cursor:default;outline:none}#screen:focus{border-color:#5798d4}#viewerBar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.foot{margin:16px 0;color:var(--muted);font-size:12px}.connectRow{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.connectRow input{min-width:240px;flex:1;background:#080f19;border:1px solid var(--line);border-radius:8px;padding:10px;color:#edf3ff}.live{color:var(--green)}.error{color:var(--red)}
+</style>
+</head>
+<body>
+<main>
+<header class="top"><div><h1>LightingMod</h1><div class="muted">Live remote desktop · WebRTC</div></div><span id="connection">Connecting to Firebase…</span></header>
 <section class="panel"><h2>Minecraft devices</h2><div id="devices"><div class="empty">Waiting for a device…</div></div></section>
-<section class="panel" id="viewer"><div id="viewerBar"><div><h2 id="viewerTitle">Remote desktop</h2><div class="muted" id="viewerStatus">Waiting for video…</div></div><button class="danger" id="disconnect">Disconnect</button></div><video id="screen" autoplay muted playsinline controls></video><div class="muted">Click the video to control the mouse. Focus it and type to send keyboard input.</div></section>
-<div class="foot">Video and remote input are available only while the PC owner has approved the session in Minecraft. Video is encoded as H.264 segments and transferred through Firebase Storage; control commands use Firebase Realtime Database.</div>
+<section class="panel" id="viewer">
+  <div id="viewerBar"><div><h2 id="viewerTitle">Remote desktop</h2><div class="muted" id="viewerStatus">Waiting for connection…</div></div><button class="danger" id="disconnect">Disconnect</button></div>
+  <div class="connectRow"><input id="pairingToken" type="password" autocomplete="off" placeholder="PC pairing token"><button id="connect">Connect</button></div>
+  <video id="screen" autoplay muted playsinline tabindex="0"></video>
+  <div class="muted">Click the desktop to focus it. Mouse movement, clicks, scrolling, and keyboard input are sent to the approved PC.</div>
+</section>
+<div class="foot">The PC owner must approve screen sharing in Minecraft. Firebase is used only for device discovery and WebRTC signaling. Screen video and remote input travel directly over an encrypted WebRTC peer connection.</div>
 </main>
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js';
-import {getDatabase,ref,onValue,push} from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js';
+import {getDatabase,ref,onValue,get,set,remove} from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js';
 import {firebaseConfig} from './firebase-config.js';
-const app=initializeApp(firebaseConfig),db=getDatabase(app);
-const devicesEl=document.getElementById('devices'),connectionEl=document.getElementById('connection'),viewer=document.getElementById('viewer'),screen=document.getElementById('screen');
-let devices={},approvals={},streams={},activeId=null,mediaSource=null,sourceBuffer=null,appendQueue=[],appended=new Set(),initLoaded=false,screenSize={width:960,height:540},lastMoveAt=0,userPaused=false,hasStartedPlayback=false,videoGeneration=0,fetching=new Set(),updateChain=Promise.resolve();
-function stopViewer(){videoGeneration++;if(screen.src)screen.pause();screen.removeAttribute('src');screen.load();if(mediaSource&&mediaSource.readyState==='open'){try{mediaSource.endOfStream();}catch{}}mediaSource=null;sourceBuffer=null;appendQueue=[];appended.clear();fetching.clear();initLoaded=false;userPaused=false;hasStartedPlayback=false;viewer.style.display='none';activeId=null;}
-function sendCommand(data){if(!activeId||(approvals[activeId]?.decision||'').toLowerCase()!=='approved')return;push(ref(db,'commands/'+activeId),{...data,createdAt:Date.now()}).catch(error=>document.getElementById('viewerStatus').textContent='Command failed: '+error.message);}
-function startVideo(id){stopViewer();activeId=id;const generation=videoGeneration;viewer.style.display='block';document.getElementById('viewerTitle').textContent=devices[id]?.name||'Remote desktop';document.getElementById('viewerStatus').textContent='Connecting to live stream…';screenSize={width:960,height:540};mediaSource=new MediaSource();screen.src=URL.createObjectURL(mediaSource);screen.controls=true;screen.autoplay=true;mediaSource.addEventListener('sourceopen',()=>{if(generation!==videoGeneration||!mediaSource||sourceBuffer)return;try{const mime='video/mp4; codecs="avc1.42E01E"';if(!MediaSource.isTypeSupported(mime))throw new Error('This browser does not support H.264 playback. Try current Chrome or Edge.');sourceBuffer=mediaSource.addSourceBuffer(mime);sourceBuffer.mode='segments';sourceBuffer.addEventListener('updateend',onBufferUpdated);pumpQueue();const state=streams[id];if(state)scheduleVideoUpdate(id,state); }catch(error){document.getElementById('viewerStatus').textContent='Video player error: '+error.message;}});}
-function onBufferUpdated(){if(!sourceBuffer||sourceBuffer.updating)return;if(appendQueue.length){pumpQueue();return;}if(mediaSource&&mediaSource.readyState==='open'&&sourceBuffer.buffered.length){const end=sourceBuffer.buffered.end(sourceBuffer.buffered.length-1);try{if(typeof mediaSource.setLiveSeekableRange==='function'&&end>0)mediaSource.setLiveSeekableRange(Math.max(0,end-12),end);}catch{}if(!userPaused){if(!hasStartedPlayback&&screen.readyState>=2){hasStartedPlayback=true;screen.play().catch(()=>{});}if(hasStartedPlayback&&!screen.paused&&end-screen.currentTime>1.8){try{screen.currentTime=Math.max(0,end-0.35);}catch{}}}}}
-function pumpQueue(){if(!sourceBuffer||sourceBuffer.updating||!appendQueue.length)return;try{sourceBuffer.appendBuffer(appendQueue.shift());}catch(error){document.getElementById('viewerStatus').textContent='Could not append live video: '+error.message;}}
-function scheduleVideoUpdate(id,data){updateChain=updateChain.then(()=>updateVideo(id,data)).catch(error=>{document.getElementById('viewerStatus').textContent='Live stream update failed: '+error.message;});}
-async function fetchChunk(url,generation){if(appended.has(url)||fetching.has(url))return;fetching.add(url);try{const response=await fetch(url,{cache:'no-store'});if(!response.ok)throw new Error('Video segment download failed ('+response.status+')');const bytes=await response.arrayBuffer();if(generation!==videoGeneration||!activeId)return;appended.add(url);appendQueue.push(bytes);pumpQueue();}catch(error){document.getElementById('viewerStatus').textContent=error.message;}finally{fetching.delete(url);}}
-async function updateVideo(id,data){if(id!==activeId||!data||!data.playlist||!mediaSource||!sourceBuffer)return;const generation=videoGeneration;screenSize={width:data.width||960,height:data.height||540};document.getElementById('viewerStatus').textContent=`LIVE · ${screenSize.width} × ${screenSize.height} · ${data.fps||10} FPS · Firebase relay`;const lines=data.playlist.split(/\r?\n/);let init=null;const segments=[];for(const line of lines){const map=line.match(/^#EXT-X-MAP:URI="(.+)"/);if(map)init=map[1];else if(line.startsWith('https://'))segments.push(line.trim());}try{if(init&&!initLoaded){const response=await fetch(init,{cache:'no-store'});if(!response.ok)throw new Error('Could not load video initialization data');const bytes=await response.arrayBuffer();if(generation!==videoGeneration)return;appendQueue.push(bytes);initLoaded=true;pumpQueue();}for(const url of segments)await fetchChunk(url,generation); }catch(error){document.getElementById('viewerStatus').textContent=error.message;}}
-function render(){const ids=new Set([...Object.keys(devices),...Object.keys(approvals)]);devicesEl.replaceChildren();if(!ids.size){const empty=document.createElement('div');empty.className='empty';empty.textContent='No Minecraft devices have connected yet.';devicesEl.append(empty);return;}for(const id of ids){const device=devices[id]||{},approval=approvals[id]||{},decision=(approval.decision||'pending').toLowerCase();const card=document.createElement('article');card.className='device';const head=document.createElement('div');head.className='deviceHead';const name=document.createElement('strong');name.textContent=device.name||'Minecraft PC';const status=document.createElement('span');status.className='pill '+(decision==='approved'?'approved':decision==='denied'?'denied':'pending');status.textContent=decision==='approved'?'Approved':decision==='denied'?'Denied':'Waiting for Minecraft approval';head.append(name,status);const meta=document.createElement('div');meta.className='meta';meta.textContent=`${device.platform||'Unknown platform'} · Minecraft ${device.minecraftVersion||'unknown'} · Last seen ${device.lastSeen?new Date(device.lastSeen).toLocaleString():'Not reported'}`;const idLine=document.createElement('div');idLine.className='meta';idLine.textContent='Device ID: '+id;card.append(head,meta,idLine);if(decision==='approved'){const button=document.createElement('button');button.textContent='View live video';button.onclick=()=>startVideo(id);card.append(button);}devicesEl.append(card);}if(activeId&&(approvals[activeId]?.decision||'').toLowerCase()!=='approved')stopViewer();}
-onValue(ref(db,'devices'),snap=>{devices=snap.val()||{};render();connectionEl.textContent='Firebase connected';},err=>connectionEl.textContent='Database error: '+err.message);
-onValue(ref(db,'approvals'),snap=>{approvals=snap.val()||{};render();},err=>connectionEl.textContent='Database error: '+err.message);
-onValue(ref(db,'streams'),snap=>{streams=snap.val()||{};if(activeId)scheduleVideoUpdate(activeId,streams[activeId]);},err=>connectionEl.textContent='Stream error: '+err.message);
-screen.addEventListener('pause',()=>{if(hasStartedPlayback)userPaused=true;});screen.addEventListener('play',()=>{userPaused=false;onBufferUpdated();});document.getElementById('disconnect').onclick=stopViewer;
-screen.addEventListener('pointermove',event=>{if(!activeId||Date.now()-lastMoveAt<35)return;lastMoveAt=Date.now();const rect=screen.getBoundingClientRect();sendCommand({type:'move',x:Math.round((event.clientX-rect.left)/rect.width*screenSize.width),y:Math.round((event.clientY-rect.top)/rect.height*screenSize.height)});});
-screen.addEventListener('pointerdown',event=>{if(!activeId)return;screen.focus();const rect=screen.getBoundingClientRect();sendCommand({type:'move',x:Math.round((event.clientX-rect.left)/rect.width*screenSize.width),y:Math.round((event.clientY-rect.top)/rect.height*screenSize.height)});sendCommand({type:'click',button:event.button});});screen.tabIndex=0;screen.addEventListener('keydown',event=>{if(event.key==='Escape'){screen.blur();return;}event.preventDefault();sendCommand({type:'keyDown',key:normalizeKey(event.key)});});screen.addEventListener('keyup',event=>{event.preventDefault();sendCommand({type:'keyUp',key:normalizeKey(event.key)});});screen.addEventListener('wheel',event=>{event.preventDefault();sendCommand({type:'scroll',amount:Math.sign(event.deltaY)*Math.max(1,Math.round(Math.abs(event.deltaY)/100))});},{passive:false});function normalizeKey(key){const names={' ':'SPACE','ArrowUp':'UP','ArrowDown':'DOWN','ArrowLeft':'LEFT','ArrowRight':'RIGHT','Control':'CTRL','Meta':'META','PageUp':'PAGE_UP','PageDown':'PAGE_DOWN'};return names[key]||key.toUpperCase();}window.addEventListener('beforeunload',stopViewer);
-</script></body></html>
+
+const app=initializeApp(firebaseConfig);
+const db=getDatabase(app);
+const devicesEl=document.getElementById('devices');
+const connectionEl=document.getElementById('connection');
+const viewer=document.getElementById('viewer');
+const screen=document.getElementById('screen');
+const statusEl=document.getElementById('viewerStatus');
+let devices={};
+let approvals={};
+let activeId=null;
+let sessionId=null;
+let peer=null;
+let inputChannel=null;
+let sessionListener=null;
+let lastMove=0;
+let pressedKeys=new Set();
+let pendingAnswer=false;
+
+function setStatus(message,kind=''){
+  statusEl.textContent=message;
+  statusEl.className=kind;
+}
+
+function sendInput(data){
+  if(!inputChannel||inputChannel.readyState!=='open')return;
+  try{inputChannel.send(JSON.stringify(data));}catch(error){setStatus('Input channel error: '+error.message,'error');}
+}
+
+function stopViewer(){
+  if(sessionListener){sessionListener();sessionListener=null;}
+  if(activeId&&sessionId)remove(ref(db,'sessions/'+activeId)).catch(()=>{});
+  if(peer){peer.ontrack=null;peer.onconnectionstatechange=null;peer.close();}
+  peer=null;
+  inputChannel=null;
+  screen.pause();
+  screen.srcObject=null;
+  screen.load();
+  activeId=null;
+  sessionId=null;
+  pendingAnswer=false;
+  pressedKeys.clear();
+  viewer.style.display='none';
+}
+
+async function createProof(token,id,challenge){
+  const encoder=new TextEncoder();
+  const key=await crypto.subtle.importKey('raw',encoder.encode(token),{name:'HMAC',hash:'SHA-256'},false,['sign']);
+  const signature=await crypto.subtle.sign('HMAC',key,encoder.encode(id+':'+challenge));
+  return Array.from(new Uint8Array(signature),byte=>byte.toString(16).padStart(2,'0')).join('');
+}
+
+function waitForIceGathering(connection){
+  if(connection.iceGatheringState==='complete')return Promise.resolve();
+  return new Promise((resolve,reject)=>{
+    const timeout=setTimeout(()=>{cleanup();reject(new Error('ICE gathering timed out.'));},20000);
+    function changed(){if(connection.iceGatheringState==='complete'){cleanup();resolve();}}
+    function cleanup(){clearTimeout(timeout);connection.removeEventListener('icegatheringstatechange',changed);}
+    connection.addEventListener('icegatheringstatechange',changed);
+  });
+}
+
+async function startViewer(id){
+  stopViewer();
+  activeId=id;
+  viewer.style.display='block';
+  document.getElementById('viewerTitle').textContent=devices[id]?.name||'Remote desktop';
+  document.getElementById('pairingToken').value='';
+  setStatus('Enter the pairing token, then connect.');
+}
+
+async function connectViewer(){
+  if(!activeId)return;
+  if(sessionListener){sessionListener();sessionListener=null;}
+  if(peer){peer.close();peer=null;}
+  if(sessionId)remove(ref(db,'sessions/'+activeId)).catch(()=>{});
+  inputChannel=null;
+  const token=document.getElementById('pairingToken').value.trim();
+  if(!token){setStatus('Enter the pairing token from config/lightingmod.properties.','error');return;}
+  const id=activeId;
+  const connectButton=document.getElementById('connect');
+  connectButton.disabled=true;
+  setStatus('Authenticating and preparing WebRTC…');
+  try{
+    const challengeSnapshot=await get(ref(db,'pairing/'+id+'/challenge'));
+    const challenge=challengeSnapshot.val();
+    if(!challenge)throw new Error('The PC has not published a pairing challenge. Check that Minecraft has approved screen sharing.');
+    sessionId=crypto.randomUUID();
+    const proof=await createProof(token,sessionId,challenge);
+    peer=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+    peer.addTransceiver('video',{direction:'recvonly'});
+    inputChannel=peer.createDataChannel('remote-input',{ordered:true});
+    inputChannel.onopen=()=>{setStatus('LIVE · WebRTC connected','live');screen.focus();};
+    inputChannel.onclose=()=>{if(activeId)setStatus('Remote input channel closed.','error');};
+    peer.ontrack=event=>{
+      const stream=event.streams[0]||new MediaStream([event.track]);
+      screen.srcObject=stream;
+      screen.play().catch(()=>setStatus('Click the desktop to start video playback.'));
+    };
+    peer.onconnectionstatechange=()=>{
+      if(!peer)return;
+      if(peer.connectionState==='connected')setStatus('LIVE · Direct WebRTC connection','live');
+      else if(peer.connectionState==='connecting')setStatus('Connecting peer-to-peer…');
+      else if(peer.connectionState==='disconnected')setStatus('Connection interrupted; attempting recovery…');
+      else if(peer.connectionState==='failed')setStatus('WebRTC connection failed. A TURN relay may be required on this network.','error');
+      else if(peer.connectionState==='closed')setStatus('Disconnected.');
+    };
+    const offer=await peer.createOffer();
+    await peer.setLocalDescription(offer);
+    await waitForIceGathering(peer);
+    const offerData={type:peer.localDescription.type,sdp:peer.localDescription.sdp};
+    const sessionRef=ref(db,'sessions/'+id);
+    await set(sessionRef,{sessionId,offer:offerData,proof,status:'offering',createdAt:Date.now()});
+    setStatus('Offer sent. Waiting for the PC to answer…');
+    sessionListener=onValue(sessionRef,async snapshot=>{
+      const data=snapshot.val();
+      if(!data||data.sessionId!==sessionId)return;
+      if(data.status==='unauthorized'){setStatus('Pairing token was rejected. Check the token and try again.','error');return;}
+      if(data.error?.message){setStatus('WebRTC error: '+data.error.message,'error');return;}
+      if(data.answer&&!pendingAnswer){
+        pendingAnswer=true;
+        try{if(!peer)return;await peer.setRemoteDescription(data.answer);setStatus('Answer received. Establishing encrypted connection…');}
+        catch(error){setStatus('Could not apply WebRTC answer: '+error.message,'error');}
+      }
+    });
+  }catch(error){
+    setStatus(error.message,'error');
+    if(peer){peer.close();peer=null;}
+  }finally{
+    connectButton.disabled=false;
+  }
+}
+
+function render(){
+  const ids=new Set([...Object.keys(devices),...Object.keys(approvals)]);
+  devicesEl.replaceChildren();
+  if(!ids.size){const empty=document.createElement('div');empty.className='empty';empty.textContent='No Minecraft devices have connected yet.';devicesEl.append(empty);return;}
+  for(const id of ids){
+    const device=devices[id]||{};
+    const approval=approvals[id]||{};
+    const decision=(approval.decision||'pending').toLowerCase();
+    const card=document.createElement('article');card.className='device';
+    const head=document.createElement('div');head.className='deviceHead';
+    const name=document.createElement('strong');name.textContent=device.name||'Minecraft PC';
+    const badge=document.createElement('span');badge.className='pill '+(decision==='approved'?'approved':decision==='denied'?'denied':'pending');badge.textContent=decision==='approved'?'Approved':decision==='denied'?'Denied':'Waiting for Minecraft approval';
+    head.append(name,badge);
+    const meta=document.createElement('div');meta.className='meta';meta.textContent=`${device.platform||'Unknown platform'} · Minecraft ${device.minecraftVersion||'unknown'} · Last seen ${device.lastSeen?new Date(device.lastSeen).toLocaleString():'Not reported'}`;
+    const idLine=document.createElement('div');idLine.className='meta';idLine.textContent='Device ID: '+id;
+    card.append(head,meta,idLine);
+    if(decision==='approved'){
+      const button=document.createElement('button');button.textContent='Open remote desktop';button.onclick=()=>startViewer(id);card.append(button);
+    }
+    devicesEl.append(card);
+  }
+  if(activeId&&(approvals[activeId]?.decision||'').toLowerCase()!=='approved')stopViewer();
+}
+
+onValue(ref(db,'devices'),snapshot=>{devices=snapshot.val()||{};render();connectionEl.textContent='Firebase connected';},error=>connectionEl.textContent='Database error: '+error.message);
+onValue(ref(db,'approvals'),snapshot=>{approvals=snapshot.val()||{};render();},error=>connectionEl.textContent='Database error: '+error.message);
+document.getElementById('connect').addEventListener('click',connectViewer);
+document.getElementById('disconnect').addEventListener('click',stopViewer);
+
+function videoPoint(event){
+  const rect=screen.getBoundingClientRect();
+  const width=screen.videoWidth||1280;
+  const height=screen.videoHeight||720;
+  const scale=Math.min(rect.width/width,rect.height/height);
+  const shownWidth=width*scale;
+  const shownHeight=height*scale;
+  const left=rect.left+(rect.width-shownWidth)/2;
+  const top=rect.top+(rect.height-shownHeight)/2;
+  return {x:Math.max(0,Math.min(1,(event.clientX-left)/shownWidth)),y:Math.max(0,Math.min(1,(event.clientY-top)/shownHeight))};
+}
+
+screen.addEventListener('pointermove',event=>{
+  if(!activeId||Date.now()-lastMove<16)return;
+  lastMove=Date.now();
+  sendInput({type:'move',...videoPoint(event)});
+});
+screen.addEventListener('pointerdown',event=>{
+  if(!activeId)return;
+  screen.focus();
+  screen.setPointerCapture(event.pointerId);
+  sendInput({type:'move',...videoPoint(event)});
+  sendInput({type:'mouseDown',button:event.button});
+});
+screen.addEventListener('pointerup',event=>sendInput({type:'mouseUp',button:event.button}));
+screen.addEventListener('contextmenu',event=>event.preventDefault());
+screen.addEventListener('keydown',event=>{
+  if(!activeId||event.repeat)return;
+  event.preventDefault();
+  pressedKeys.add(event.code);
+  sendInput({type:'keyDown',code:event.code});
+});
+screen.addEventListener('keyup',event=>{
+  if(!activeId)return;
+  event.preventDefault();
+  pressedKeys.delete(event.code);
+  sendInput({type:'keyUp',code:event.code});
+});
+screen.addEventListener('wheel',event=>{
+  event.preventDefault();
+  sendInput({type:'scroll',amount:Math.max(-8,Math.min(8,Math.round(event.deltaY/100)))});
+},{passive:false});
+window.addEventListener('blur',()=>{
+  for(const code of pressedKeys)sendInput({type:'keyUp',code});
+  pressedKeys.clear();
+});
+window.addEventListener('beforeunload',()=>{
+  if(activeId&&sessionId)remove(ref(db,'sessions/'+activeId));
+  if(peer)peer.close();
+});
+</script>
+</body>
+</html>
