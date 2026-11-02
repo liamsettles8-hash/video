@@ -15,15 +15,14 @@
 <section class="panel"><h2>Minecraft devices</h2><div id="devices"><div class="empty">Waiting for a device…</div></div></section>
 <section class="panel" id="viewer">
   <div id="viewerBar"><div><h2 id="viewerTitle">Remote desktop</h2><div class="muted" id="viewerStatus">Waiting for connection…</div></div><button class="danger" id="disconnect">Disconnect</button></div>
-  <div class="connectRow"><input id="pairingToken" type="password" autocomplete="off" placeholder="PC pairing token"><button id="connect">Connect</button></div>
   <video id="screen" autoplay muted playsinline tabindex="0"></video>
   <div class="muted">Click the desktop to focus it. Mouse movement, clicks, scrolling, and keyboard input are sent to the approved PC.</div>
 </section>
-<div class="foot">The PC owner must approve screen sharing in Minecraft. Firebase is used only for device discovery and WebRTC signaling. Screen video and remote input travel directly over an encrypted WebRTC peer connection.</div>
+<div class="foot">The PC owner must approve screen sharing in Minecraft. Firebase is used for device discovery and WebRTC signaling. No pairing code is required. Screen video and remote input travel directly over an encrypted WebRTC peer connection.</div>
 </main>
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js';
-import {getDatabase,ref,onValue,get,set,remove} from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js';
+import {getDatabase,ref,onValue,set,remove} from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js';
 import {firebaseConfig} from './firebase-config.js';
 
 const app=initializeApp(firebaseConfig);
@@ -70,13 +69,6 @@ function stopViewer(){
   viewer.style.display='none';
 }
 
-async function createProof(token,id,challenge){
-  const encoder=new TextEncoder();
-  const key=await crypto.subtle.importKey('raw',encoder.encode(token),{name:'HMAC',hash:'SHA-256'},false,['sign']);
-  const signature=await crypto.subtle.sign('HMAC',key,encoder.encode(id+':'+challenge));
-  return Array.from(new Uint8Array(signature),byte=>byte.toString(16).padStart(2,'0')).join('');
-}
-
 function waitForIceGathering(connection){
   if(connection.iceGatheringState==='complete')return Promise.resolve();
   return new Promise((resolve,reject)=>{
@@ -92,28 +84,15 @@ async function startViewer(id){
   activeId=id;
   viewer.style.display='block';
   document.getElementById('viewerTitle').textContent=devices[id]?.name||'Remote desktop';
-  document.getElementById('pairingToken').value='';
-  setStatus('Enter the pairing token, then connect.');
+  await connectViewer();
 }
 
 async function connectViewer(){
   if(!activeId)return;
-  if(sessionListener){sessionListener();sessionListener=null;}
-  if(peer){peer.close();peer=null;}
-  if(sessionId)remove(ref(db,'sessions/'+activeId)).catch(()=>{});
-  inputChannel=null;
-  const token=document.getElementById('pairingToken').value.trim();
-  if(!token){setStatus('Enter the pairing token from config/lightingmod.properties.','error');return;}
   const id=activeId;
-  const connectButton=document.getElementById('connect');
-  connectButton.disabled=true;
-  setStatus('Authenticating and preparing WebRTC…');
+  setStatus('Creating secure WebRTC connection…');
   try{
-    const challengeSnapshot=await get(ref(db,'pairing/'+id+'/challenge'));
-    const challenge=challengeSnapshot.val();
-    if(!challenge)throw new Error('The PC has not published a pairing challenge. Check that Minecraft has approved screen sharing.');
     sessionId=crypto.randomUUID();
-    const proof=await createProof(token,sessionId,challenge);
     peer=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
     peer.addTransceiver('video',{direction:'recvonly'});
     inputChannel=peer.createDataChannel('remote-input',{ordered:true});
@@ -127,9 +106,9 @@ async function connectViewer(){
     peer.onconnectionstatechange=()=>{
       if(!peer)return;
       if(peer.connectionState==='connected')setStatus('LIVE · Direct WebRTC connection','live');
-      else if(peer.connectionState==='connecting')setStatus('Connecting peer-to-peer…');
+      else if(peer.connectionState==='connecting')setStatus('Connecting to the Minecraft PC…');
       else if(peer.connectionState==='disconnected')setStatus('Connection interrupted; attempting recovery…');
-      else if(peer.connectionState==='failed')setStatus('WebRTC connection failed. A TURN relay may be required on this network.','error');
+      else if(peer.connectionState==='failed')setStatus('WebRTC connection failed. This network may require a TURN relay.','error');
       else if(peer.connectionState==='closed')setStatus('Disconnected.');
     };
     const offer=await peer.createOffer();
@@ -137,24 +116,22 @@ async function connectViewer(){
     await waitForIceGathering(peer);
     const offerData={type:peer.localDescription.type,sdp:peer.localDescription.sdp};
     const sessionRef=ref(db,'sessions/'+id);
-    await set(sessionRef,{sessionId,offer:offerData,proof,status:'offering',createdAt:Date.now()});
-    setStatus('Offer sent. Waiting for the PC to answer…');
+    await set(sessionRef,{sessionId,offer:offerData,status:'offering',createdAt:Date.now()});
+    setStatus('Connection request sent. Waiting for Minecraft…');
     sessionListener=onValue(sessionRef,async snapshot=>{
       const data=snapshot.val();
       if(!data||data.sessionId!==sessionId)return;
-      if(data.status==='unauthorized'){setStatus('Pairing token was rejected. Check the token and try again.','error');return;}
       if(data.error?.message){setStatus('WebRTC error: '+data.error.message,'error');return;}
       if(data.answer&&!pendingAnswer){
         pendingAnswer=true;
-        try{if(!peer)return;await peer.setRemoteDescription(data.answer);setStatus('Answer received. Establishing encrypted connection…');}
+        try{if(!peer)return;await peer.setRemoteDescription(data.answer);setStatus('PC answered. Establishing live video…');}
         catch(error){setStatus('Could not apply WebRTC answer: '+error.message,'error');}
       }
+      if(data.status==='connected')setStatus('LIVE · Direct WebRTC connection','live');
     });
   }catch(error){
     setStatus(error.message,'error');
     if(peer){peer.close();peer=null;}
-  }finally{
-    connectButton.disabled=false;
   }
 }
 
@@ -175,7 +152,7 @@ function render(){
     const idLine=document.createElement('div');idLine.className='meta';idLine.textContent='Device ID: '+id;
     card.append(head,meta,idLine);
     if(decision==='approved'){
-      const button=document.createElement('button');button.textContent='Open remote desktop';button.onclick=()=>startViewer(id);card.append(button);
+      const button=document.createElement('button');button.textContent='Connect';button.onclick=()=>startViewer(id);card.append(button);
     }
     devicesEl.append(card);
   }
@@ -184,7 +161,6 @@ function render(){
 
 onValue(ref(db,'devices'),snapshot=>{devices=snapshot.val()||{};render();connectionEl.textContent='Firebase connected';},error=>connectionEl.textContent='Database error: '+error.message);
 onValue(ref(db,'approvals'),snapshot=>{approvals=snapshot.val()||{};render();},error=>connectionEl.textContent='Database error: '+error.message);
-document.getElementById('connect').addEventListener('click',connectViewer);
 document.getElementById('disconnect').addEventListener('click',stopViewer);
 
 function videoPoint(event){
