@@ -91,16 +91,11 @@
       cursor: crosshair;
       touch-action: none;
       outline: none;
+      user-select: none;
     }
 
-    #screen::-webkit-media-controls {
-      display: none !important;
-    }
-
-    #screen::-webkit-media-controls-enclosure {
-      display: none !important;
-    }
-
+    #screen::-webkit-media-controls,
+    #screen::-webkit-media-controls-enclosure,
     #screen::-webkit-media-controls-panel {
       display: none !important;
     }
@@ -183,14 +178,15 @@
         id="screen"
         autoplay
         playsinline
+        tabindex="0"
         disablepictureinpicture
         disableremoteplayback
-        controlslist="nodownload nofullscreen noremoteplayback"
+        controlslist="nodownload noremoteplayback"
       ></video>
 
       <p class="muted">
-        Click the desktop to enter fullscreen. Press Escape to exit.
-        Mouse and keyboard input are forwarded while connected.
+        Use the fullscreen button to expand the desktop.
+        Press Escape to exit. Mouse and keyboard input are forwarded while connected.
       </p>
     </div>
 
@@ -309,6 +305,7 @@
       approvalsElement.replaceChildren();
 
       const entries = Object.entries(approvals);
+      let found = false;
 
       if (entries.length === 0) {
         approvalsElement.textContent = 'No approved devices.';
@@ -319,6 +316,8 @@
         if (!approval || approval.approved !== true) {
           continue;
         }
+
+        found = true;
 
         const row = document.createElement('div');
         row.className = 'device';
@@ -336,6 +335,10 @@
         row.appendChild(information);
 
         approvalsElement.appendChild(row);
+      }
+
+      if (!found) {
+        approvalsElement.textContent = 'No approved devices.';
       }
     }
 
@@ -373,11 +376,7 @@
 
         function cleanup() {
           clearTimeout(timeout);
-
-          connection.removeEventListener(
-            'icegatheringstatechange',
-            changed
-          );
+          connection.removeEventListener('icegatheringstatechange', changed);
         }
 
         function finish() {
@@ -402,11 +401,7 @@
           finish();
         }, 20000);
 
-        connection.addEventListener(
-          'icegatheringstatechange',
-          changed
-        );
-
+        connection.addEventListener('icegatheringstatechange', changed);
         changed();
       });
     }
@@ -429,7 +424,6 @@
       } catch (error) {
         log('Connection setup failed: ' + error.message);
         setStatus(error.message);
-
         await stopViewer();
       } finally {
         connecting = false;
@@ -442,8 +436,6 @@
 
       log('Session ID: ' + sessionId);
       setStatus('Creating secure WebRTC connection…');
-
-      log('Creating RTCPeerConnection.');
 
       peer = new RTCPeerConnection({
         iceServers: [
@@ -523,7 +515,6 @@
       };
 
       const offer = await peer.createOffer();
-
       await peer.setLocalDescription(offer);
 
       log('Local offer created. Gathering ICE candidates.');
@@ -560,9 +551,7 @@
           return;
         }
 
-        if (data.sessionId !== sessionId) {
-          return;
-        }
+        if (data.sessionId !== sessionId) return;
 
         if (data.error) {
           log('Device error: ' + data.error);
@@ -635,6 +624,8 @@
         }
       }
 
+      releasePointer();
+
       screen.srcObject = null;
       viewerElement.style.display = 'none';
 
@@ -664,12 +655,6 @@
     }
 
     fullscreenButton.addEventListener('click', toggleFullscreen);
-
-    screen.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        toggleFullscreen();
-      }
-    });
 
     document.addEventListener('fullscreenchange', () => {
       fullscreenButton.textContent =
@@ -726,30 +711,43 @@
         return null;
       }
 
-      return {
-        x,
-        y
-      };
+      return { x, y };
     }
 
-    screen.addEventListener('mousemove', event => {
-      const position = getScreenCoordinates(event);
+    function releasePointer() {
+      if (screen.hasPointerCapture?.(activePointerId)) {
+        try {
+          screen.releasePointerCapture(activePointerId);
+        } catch (error) {
+          log('Pointer release error: ' + error.message);
+        }
+      }
 
-      if (!position) return;
+      activePointerId = null;
+    }
 
-      sendInput({
-        type: 'mouseMove',
-        x: position.x,
-        y: position.y
-      });
-    });
+    let activePointerId = null;
+    const pressedButtons = new Set();
 
-    screen.addEventListener('mousedown', event => {
+    screen.addEventListener('pointerdown', event => {
       event.preventDefault();
 
-      const position = getScreenCoordinates(event);
+      if (activePointerId !== null) return;
 
+      activePointerId = event.pointerId;
+
+      try {
+        screen.setPointerCapture(event.pointerId);
+      } catch (error) {
+        log('Pointer capture unavailable: ' + error.message);
+      }
+
+      screen.focus();
+
+      const position = getScreenCoordinates(event);
       if (!position) return;
+
+      pressedButtons.add(event.button);
 
       sendInput({
         type: 'mouseDown',
@@ -759,20 +757,59 @@
       });
     });
 
-    screen.addEventListener('mouseup', event => {
-      event.preventDefault();
-
+    screen.addEventListener('pointermove', event => {
       const position = getScreenCoordinates(event);
-
       if (!position) return;
 
       sendInput({
-        type: 'mouseUp',
-        button: event.button,
+        type: 'mouseMove',
         x: position.x,
         y: position.y
       });
     });
+
+    screen.addEventListener('pointerup', event => {
+      event.preventDefault();
+
+      const position = getScreenCoordinates(event);
+
+      if (position && pressedButtons.has(event.button)) {
+        sendInput({
+          type: 'mouseUp',
+          button: event.button,
+          x: position.x,
+          y: position.y
+        });
+      }
+
+      pressedButtons.delete(event.button);
+
+      if (activePointerId === event.pointerId) {
+        releasePointer();
+      }
+    });
+
+    screen.addEventListener('pointercancel', () => {
+      releaseAllButtons();
+    });
+
+    screen.addEventListener('lostpointercapture', () => {
+      releaseAllButtons();
+    });
+
+    function releaseAllButtons() {
+      for (const button of pressedButtons) {
+        sendInput({
+          type: 'mouseUp',
+          button,
+          x: 0.5,
+          y: 0.5
+        });
+      }
+
+      pressedButtons.clear();
+      activePointerId = null;
+    }
 
     screen.addEventListener('contextmenu', event => {
       event.preventDefault();
@@ -822,6 +859,10 @@
         code: event.code,
         keyCode: event.keyCode
       });
+    });
+
+    window.addEventListener('blur', () => {
+      releaseAllButtons();
     });
 
     window.addEventListener('beforeunload', () => {
